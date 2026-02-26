@@ -1,0 +1,23 @@
+# conda install --channel=numba llvmlite
+# 
+ollama
+gradio
+pdfplumber
+langchain
+langchain-core
+langchain-ollama
+langchain_community
+langchain_text_splitters
+unstructured[all-docs]
+onnx
+protobuf
+chromadb
+llvmlite==0.45.1 
+torch
+sentence-transformers==3.0.0
+scikit-learn
+Pillow
+numpy==1.26.4
+streamlit
+jupyter
+opencv-python==4.8.0.76
