@@ -1,10 +1,10 @@
 # Plug-and-Play Ollama RAG
 A simple and effective RAG pipeline that you can use locally and customise for zero dollar.
 
-## 🖼️ Screenshots
+## Screenshots
 ![Ollama RAG ](screenshot.png "")
 
-## ✨ Features
+## Features
 
 - 🔒 **100% Local** - All processing logic and data happens on your machine
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
@@ -12,7 +12,7 @@ A simple and effective RAG pipeline that you can use locally and customise for z
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB
 - ⚙️ **Advanced configuration** - Based on your data, tune your RAG for optimal performance by setting chunk size and chunk overlap
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -42,7 +42,7 @@ A simple and effective RAG pipeline that you can use locally and customise for z
     streamlit run main.py
    ```
 
-## 🏗️ Project Structure
+## Project Structure
 ```text
 custom-rag
 ├── data
@@ -62,17 +62,17 @@ custom-rag
     └── utils.py
 ```
 
-## 🤝 Contributing
+## Contributing
 
 - Open issues for bugs or suggestions
 - Submit pull requests
 - ⭐ Star the repository if you find it useful!
 
-## 📝 License
+## License
 
 This project is open source and available under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [LangChain](https://www.langchain.com/) for the AI agent framework
 - [Ollama](https://ollama.com) for advanced search capabilities
