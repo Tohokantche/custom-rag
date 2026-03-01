@@ -21,3 +21,4 @@ numpy==1.26.4
 streamlit
 jupyter
 opencv-python==4.8.0.76
+rank_bm25
