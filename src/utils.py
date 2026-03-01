@@ -32,7 +32,7 @@ class LoadModelsThread(Thread):
             # A generation-only model will likely fail if forced into an embedding call,
             # but a general LLM can produce embeddings through the 'embed' function
             # (though typically less specialized than dedicated embedding models)
-            logger.info(f"Error generating text with {self.model_name}: {e}")
+            logger.error(f"Error generating text with {self.model_name}: {e}")
             return None
 
     # --- Embedding Model ---
@@ -48,6 +48,7 @@ class LoadModelsThread(Thread):
             return None
     
     def run(self):
+        # Spearate generation models from embeddings ones by testing their output
         emb_models = False
         gen_data = self.use_generation_model()
         embedding = self.use_embedding_model()
@@ -59,6 +60,7 @@ class LoadModelsThread(Thread):
             emb_models = True
         self.return_value = emb_models
 
+
 class DownloadModels(Thread):
     def __init__(self, model_name):
         super().__init__()
@@ -66,7 +68,7 @@ class DownloadModels(Thread):
         self.command = ["ollama", "pull", model_name]
         self.return_value = False
     
-    def execute_command(self, timeout: int=180) -> Union[subprocess.CompletedProcess[str], None]:
+    def execute_command(self, timeout: int=600) -> Union[subprocess.CompletedProcess[str], None]:
         """ Method to download the embedding and the chat models"""
         result = None
         try:
@@ -83,7 +85,7 @@ class DownloadModels(Thread):
             logger.error(f"Captured stdout: {e.stdout}")
             logger.error(f"Captured stderr: {e.stderr}")
         except FileNotFoundError as e:
-            logger.error(f"Error: Command '{command[0]}' not found - {e}")
+            logger.error(f"Error: Command '{self.command[0]}' not found - {e}")
         except subprocess.CalledProcessError as e:
             logger.error(f"Process failed with exit code {e.returncode}")
             logger.error(f"Stdout: {e.stdout}")
@@ -93,7 +95,7 @@ class DownloadModels(Thread):
         return result
     
     def run(self):
-        result = self.execute_command(command)
+        result = self.execute_command(self.command)
         if ("success" in result.stderr) and result:
             self.return_value=True
 
@@ -115,12 +117,14 @@ class LoadReRanker(Thread):
             self.model.to(device)
 
         def get_ranked_document(self, query_documents: List[Tuple[str, str]] = None, sources : List[str] = None):
+            logger.info("Re-ranking retrieved documents")
             if not query_documents and not sources:
                 scores = self.model.predict(query_documents)
-                logger.info(f"Re-rank documents score : {scores}")
+                logger.info(f"Re-rank retrieved documents score : {scores}")
                 scored_documents = sorted(zip(scores, query_documents, sources), key=lambda x : x[0], reverse= True )
                 return scored_documents 
             return None
+
 
 def render_config():
     """Render and handle chunck configuration.
@@ -134,17 +138,18 @@ def render_config():
     """
     with st.sidebar:
         st.markdown("### ⚙️ Configuration")
-        with st.expander("🧱 Chunk Setting", expanded=False):
+        with st.expander("🧱 Retrieval Settings", expanded=False):
             chunk_size = st.number_input("Enter chunk size:", value=1500, min_value=256, max_value=10000, step=1, 
-                                          format="%i", help="Specify chunk size")
+                                          format="%i", help="Specify data chunk size")
             chunk_overlap = st.number_input("Enter chunk overlap:", value=100, min_value=10, max_value=500, 
-                                             step=1, format="%i", help="Specify chunk overlap")
-            st.divider
-            re_ranker = st.checkbox("Use Re-ranker")
+                                             step=1, format="%i", help="Specify data chunk overlap")
+            st.divider()
+            h_search = st.checkbox("Use hybrid search", help="Combine semantic with keyword search")
+            re_ranker = st.checkbox("Use Re-ranker", help="Re-rank the retrieved documents")
             if re_ranker:
-                st.warning('This might really slow down the RAG response time, as this demo run on free tier CPU cloud \
+                st.warning('This might really slow down your RAG response time, as this demo run on free tier CPU cloud \
                            with very limited ressources!', icon="⚠️")
-    return {"chunk_size": str(chunk_size), "chunk_overlap": str(chunk_overlap), "re_ranker": re_ranker}
+    return {"chunk_size": str(chunk_size), "chunk_overlap": str(chunk_overlap), "re_ranker": re_ranker, "h_search": h_search}
 
 
 def generate_pdf_id(file_upload) -> str:
@@ -164,6 +169,7 @@ def extract_model_names(models_info: Any) -> Tuple[str, ...]:
         Tuple[str, ...]: A tuple of model names.
     """
     logger.info("Extracting model names from models_info")
+    # Initialise list for generation and embeddings models
     gen_models = []
     emb_models = []
     try:
@@ -188,7 +194,6 @@ def extract_model_names(models_info: Any) -> Tuple[str, ...]:
         else:
             # Fallback for any other format
             model_names = tuple()
-            ## Download one chat, on embedding and one re-ranker models 
             
         logger.info(f"Extracted model names: {model_names}")
         # return model_names
@@ -196,42 +201,3 @@ def extract_model_names(models_info: Any) -> Tuple[str, ...]:
     except Exception as e:
         logger.error(f"Error extracting model names: {e}")
         return tuple()
-    
-
-def execute_command(command: List[str], timeout: int=15) -> Union[subprocess.CompletedProcess[str], None]:
-    """ Method for executing a shell command """
-    result = None
-    try:
-        logger.info(f"Running : {command}")
-        result = subprocess.run(
-        command,
-        #timeout=timeout,
-        check=True,
-        capture_output=True,
-        text=True 
-        )
-    except subprocess.TimeoutExpired as e:
-        logger.error(f"Command timed out after {e.timeout} seconds.")
-        logger.error(f"Captured stdout: {e.stdout}")
-        logger.error(f"Captured stderr: {e.stderr}")
-    except FileNotFoundError as e:
-        logger.error(f"Error: Command '{command[0]}' not found - {e}")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Process failed with exit code {e.returncode}")
-        logger.error(f"Stdout: {e.stdout}")
-        logger.error(f"Stderr: {e.stderr}")
-    except Exception as e:
-        logger.error(f"An unexpected error occurred: {e}")
-    return result
-
-
-if __name__ == "__main__":
-    # nomic-embed-text:latest, hf.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF:Q6_K , 
-    command = ["ollama", "pull", "smollm:135m"]
-    logger.info(command)
-    result = execute_command(command)
-    logger.info(result.stderr)
-    if ("success" in result.stderr) and result:
-        logger.info("Sucessfully download the models")
-    else:
-        logger.info("Unable to download the file")
