@@ -9,6 +9,7 @@ A simple and effective RAG pipeline that you can use locally and customise for z
 - 🔒 **100% Local** - All processing logic and data happens on your machine
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
 - 🧠 **Multi-Query and re-ranker RAG** - Smarter retrieval with source citations
+- 🔍 **Hybrid search** - Semantic combined with keyword search for accurate retrieval
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB
 - ⚙️ **Advanced configuration** - Based on your data, tune your RAG for optimal performance by setting chunk size and chunk overlap
 
@@ -48,18 +49,18 @@ custom-rag
 ├── data
 │   ├── pdfs
 │   │   └── sample
-│   │       └── WEF_Global_Risks_Report_2026.pdf
-│   └── vectors
-├── LICENSE
-├── main.py
-├── README.md
-├── requirements.txt
-├── screenshot.png
-└── src
-    ├── documents.py
-    ├── embeddings.py
-    ├── rag.py
-    └── utils.py
+│   │       └── WEF_Global_Risks_Report_2026.pdf    # Default pdf sample
+│   └── vectors                                     # Vector database
+├── LICENSE                                         # Licence
+├── main.py                                         # Entry point of the app that contains dynamic UI logic
+├── README.md                                       # App documentation and usage 
+├── requirements.txt                                # Dependencies 
+├── screenshot.png                                  # Screenshot of app demo
+└── src                                             # Folder that contains app source files
+    ├── documents.py                                # Document ingestion 
+    ├── embeddings.py                               # Vector database 
+    ├── rag.py                                      # RAG logic including retrieval and grounding
+    └── utils.py                                    # Helper function including UI sidebar logic
 ```
 
 ## Contributing
