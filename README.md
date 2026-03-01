@@ -60,7 +60,7 @@ custom-rag
     ├── documents.py                                # Document ingestion 
     ├── embeddings.py                               # Vector database 
     ├── rag.py                                      # RAG logic including retrieval and grounding
-    └── utils.py                                    # Helper function including UI sidebar logic
+    └── utils.py                                    # Helper functions including UI sidebar logic
 ```
 
 ## Contributing
