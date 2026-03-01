@@ -49,9 +49,10 @@ def main() -> None:
     download_attempt = 0
     model_threads = None
 
-     # Embedding model, chat_model, re_ranker model
+    # Embedding model, Chat_model, Re_ranker model
     model_names =["nomic-embed-text:latest", "qwen3:1.7b", "zeroentropy/zerank-1-small"]
 
+    # In case the user failed to manually download the models we did it for him/her
     while (len(available_models) <2) and (download_attempt < 2) :
         with st.status("Downloading embeddings and chat models ..."):
             model_threads = [DownloadModels(model_name) for model_name in model_names[:-1]].append(LoadReRanker(model_names[-1]))
@@ -73,7 +74,7 @@ def main() -> None:
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
         st.session_state["lang_messages"] = [
-                    SystemMessage(content="You are a helpful assistant")
+                    SystemMessage(content="You are a helpful assistant.")
                 ]
     if "pdfs" not in st.session_state:
         st.session_state["pdfs"] = {}
@@ -171,9 +172,7 @@ def main() -> None:
         # Use the sample PDF
         sample_pdf_path = Path("data/pdfs/sample/WEF_Global_Risks_Report_2026.pdf")
         # Reset the context
-        st.session_state["lang_messages"] = [
-                    SystemMessage(content="You are a helpful assistant")
-                ]
+        st.session_state["lang_messages"] = [SystemMessage(content="You are a helpful assistant.")]
         if sample_pdf_path.exists():
             # Check if already loaded
             sample_id = "sample_pdf"
@@ -206,9 +205,7 @@ def main() -> None:
             key="pdf_uploader"
         )
         # Reset the context
-        st.session_state["lang_messages"] = [
-                    SystemMessage(content="You are a helpful assistant")
-                ]
+        st.session_state["lang_messages"] = [SystemMessage(content="You are a helpful assistant.")]
         if file_uploads:
             for file_upload in file_uploads:
                 pdf_id = generate_pdf_id(file_upload)
@@ -322,7 +319,9 @@ def main() -> None:
                                 st.session_state["pdfs"],
                                 selected_model,
                                 st.session_state["lang_messages"],
-                                st.session_state["re_ranker"] if st.session_state["use_re_ranker"] else None
+                                {"re_ranker": st.session_state["re_ranker"] if st.session_state["use_re_ranker"] else None,
+                                 "h_search": selection['h_search'] 
+                                 }
                             )
                             st.markdown(response)
 
@@ -357,10 +356,10 @@ def main() -> None:
 
             except Exception as e:
                 st.error(e, icon="⛔️")
-                logger.error(f"Error processing prompt: {e}")
+                logger.error(f"An unexpected error occurs : {e}")
         else:
             if not st.session_state.get("pdfs"):
-                st.warning("Upload PDF files or use the sample PDF to begin chat...")
+                st.warning("Upload PDF files or use the sample PDF to begin chat ...")
 
 
 if __name__ == "__main__":
