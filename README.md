@@ -1,15 +1,15 @@
 # Plug-and-Play Ollama RAG
-A simple and effective RAG pipeline that you can use locally and customise for zero dollar.
+A simple and effective RAG pipeline that you can use locally and customise it for zero dollar.
 
 ## Screenshots
 ![Ollama RAG ](screenshot.png "")
 
 ## Features
 
-- 🔒 **100% Local** - All processing logic and data happens on your machine
+- 🔒 **100% Local** - All processing logic and data remain on your local machine
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
 - 🧠 **Multi-Query and re-ranker RAG** - Smarter retrieval with source citations
-- 🔍 **Hybrid search** - Semantic combined with keyword search for accurate retrieval
+- 🔍 **Hybrid search** - Semantic search combined with keyword-based search for accurate retrieval
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB
 - ⚙️ **Advanced configuration** - Based on your data, tune your RAG for optimal performance by setting chunk size and chunk overlap
 
@@ -21,8 +21,9 @@ A simple and effective RAG pipeline that you can use locally and customise for z
    - Visit [Ollama's website](https://ollama.com) to download and install
    - Pull required models using your terminal:
      ```bash
-     ollama pull qwen3  # or your preferred chat model
-     ollama pull nomic-embed-text  # for embeddings with 2K context
+     ollama pull qwen3.5  # or your preferred chat model
+     ollama pull nomic-embed-text  # as embeddings model with 2K context
+     ollama pull lfm2.5-thinking:1.2b  # for routing user querries
      ```
 
 2. **Clone Repository**
@@ -45,22 +46,25 @@ A simple and effective RAG pipeline that you can use locally and customise for z
 
 ## Project Structure
 ```text
-custom-rag
+
+customag-rag
+├── configs                                       # Configuration directory
 ├── data
-│   ├── pdfs
-│   │   └── sample
-│   │       └── WEF_Global_Risks_Report_2026.pdf    # Default pdf sample
-│   └── vectors                                     # Vector database
-├── LICENSE                                         # Licence
-├── main.py                                         # Entry point of the app that contains dynamic UI logic
-├── README.md                                       # App documentation and usage 
-├── requirements.txt                                # Dependencies 
-├── screenshot.png                                  # Screenshot of app demo
-└── src                                             # Folder that contains app source files
-    ├── documents.py                                # Document ingestion 
-    ├── embeddings.py                               # Vector database 
-    ├── rag.py                                      # RAG logic including retrieval and grounding
-    └── utils.py                                    # Helper functions including UI sidebar logic
+│   ├── pdfs                                      # User's uploaded documents directory
+│   │   └── sample                                # Sample directory
+│   │       └── WEF_Global_Risks_Report_2026.pdf  # Default pdf sample
+│   └── vectors                                   # Vector database directory
+├── LICENSE                                       # Licence file
+├── logs                                          # App log directory
+├── main.py                                       # Entry point of the app that contains dynamic UI logic
+├── README.md                                     # App documentation and usage file
+├── requirements.txt                              # Dependencies file
+├── screenshot.png                                # Screenshot of app demo
+└── src                                           # Folder that contains app source files
+    ├── documents.py                              # Document ingestion logic
+    ├── embeddings.py                             # Vector database logic
+    ├── rag.py                                    # Actual RAG logic including retrieval, routing and grounding
+    └── utils.py                                  # Helper functions including UI sidebar logic
 ```
 
 ## Contributing
