@@ -8,10 +8,11 @@ A simple and effective RAG pipeline that you can use locally and customise it fo
 
 - 🔒 **100% Local** - All processing logic and data remain on your local machine
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
-- 🧠 **Multi-Query and re-ranker RAG** - Smarter retrieval with source citations
+- 🧠 **Multi-Query and Re-ranking RAG** - Smarter retrieval with source citations
 - 🔍 **Hybrid search** - Semantic search combined with keyword-based search for accurate retrieval
-- 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB
-- ⚙️ **Advanced configuration** - Based on your data, tune your RAG for optimal performance by setting chunk size and chunk overlap
+- 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB 
+- 🛡️ **Queries routing and Guardrails** - Handling toxic, malicious requests and hiting RAG only when neccessary 
+- ⚙️ **Advanced configuration** - Based on your data, tune your retrieval hyper-parameters for optimal performance 
 
 ## Getting Started
 
@@ -21,9 +22,9 @@ A simple and effective RAG pipeline that you can use locally and customise it fo
    - Visit [Ollama's website](https://ollama.com) to download and install
    - Pull required models using your terminal:
      ```bash
-     ollama pull qwen3.5  # or your preferred chat model
-     ollama pull nomic-embed-text  # as embeddings model with 2K context
-     ollama pull lfm2.5-thinking:1.2b  # for routing user querries
+     ollama pull qwen3.5  # serving as a chat model, feel free to change it to your preferred ones (models with small hallucination rate are recommended for better RAG performance)
+     ollama pull nomic-embed-text  # serving as embedding model with 2K context
+     ollama pull lfm2.5-thinking:1.2b  # serving as guardrails to adequately route the user queries 
      ```
 
 2. **Clone Repository**
