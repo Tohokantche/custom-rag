@@ -22,13 +22,15 @@ class RagLogic:
 
     def __init__(self, selected_model: str, router_model:str="lfm2.5-thinking:1.2b"):
     
+        # Template for the queries router/guardrails
         self.router_template = """
             Accurately classify the query into exactly one category: 
-            'retrieval', 'casual', or 'unsure'.
+            'retrieval', 'casual', toxic, or 'unsure'.
 
             - 'retrieval': explicit request for external facts/data that requires specific document/database access
-            - 'casual':  small talk/greetings/casual chat/personal question.
-            - 'unsure':  small talk that are ambiguous or unclear or vague or unrelated to the context.
+            - 'casual':  small talk/greetings/casual chat/personal conversation
+            - 'toxic':  hate speech/explicit insult/disrespectful statement/ malicious intention
+            - 'unsure':  small talk that are ambiguous or unclear or vague or unrelated to the context
                                                                                                                
             Query: {question}
             Category:"""
@@ -149,23 +151,27 @@ class RagLogic:
 
         logger.info(f"Classifying the user query: {question}")
         router_messages = [
-                    SystemMessage(content=" You are an user intent detector. Your role is to accurately " \
+                    SystemMessage(content=" You are a user intent detector. Your role is to accurately " \
                     "classify the user intent without hallucinating.")
                 ]
         
-        # When the question has very small number of characters we auto-treat it as a casual query
+        # By default classify queries as casual
         router_response = "casual"
+
+        # Only route queries with more than 12 characters to prevent unecessary computation
         if not (len(question) < 12):
+
+            # copy chat history to serve as a context for the query classification 
             temp_chat = copy.deepcopy(chat_context)
             router_messages.extend(temp_chat)
             router_messages.append(HumanMessagePromptTemplate.from_template(self.router_template))
             router_chain = (
-                {"context": lambda x: x["context"], "question": lambda x: x["question"]}
+                {"question": lambda x: x["question"]}
                 | ChatPromptTemplate.from_messages(router_messages)
                 | self.router_model 
                 | StrOutputParser()
             )
-            router_response = router_chain.invoke({"question": question, "context": self.chat_context})
+            router_response = router_chain.invoke({"question": question})
         if "retrieval" in router_response:
             logger.info(f"{question} is clasified as a retrival query.")
             formatted_context, all_retrieved_docs = self.retrieve_doc(question, pdfs_dict, config)
@@ -190,7 +196,12 @@ class RagLogic:
         elif "casual" in router_response:
             logger.info(f"{question} is clasified as a casual query.")
             template = """
-                You are a friendly chatbot. Respond casually to: {question}
+                You are a friendly chatbot. Respond casually and engagedly to: {question}
+            """
+        elif "toxic" in router_response:
+            logger.info(f"{question} is clasified as a toxic/malicious query.")
+            template = """
+                You are a helpful assistant. Respond vaguely to : {question}
             """
         else:
             logger.info(f"{question} is clasified as unsure query intent.")
