@@ -1,5 +1,5 @@
 # Plug-and-Play Ollama RAG
-A simple and effective RAG pipeline that you can run locally and customise it for ZERO dollar.
+A simple and effective RAG pipeline that can be run and customised locally for ZERO dollar.
 
 ## Screenshots
 ![Ollama RAG ](screenshot.png "")
@@ -10,9 +10,9 @@ A simple and effective RAG pipeline that you can run locally and customise it fo
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
 - 🧠 **Multi-Query and Re-ranking RAG** - Smarter retrieval and generation with source citations
 - 🔍 **Hybrid search** - Semantic search combined with keyword-based search for accurate retrieval
-- 🛡️ **Queries routing and Guardrails** - Automatcally handling toxic/malicious requests 
+- 🛡️ **Queries routing and Guardrails** - Automatcally handling of toxic/malicious requests 
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB 
-- ⚙️ **Advanced configuration** - Based on your data, tune your retrieval hyper-parameters for optimal performance 
+- ⚙️ **Advanced configuration** - Based on your data, tune the retrieval hyper-parameters for optimal performance 
 
 ## Getting Started
 
@@ -22,7 +22,7 @@ A simple and effective RAG pipeline that you can run locally and customise it fo
    - Visit [Ollama's website](https://ollama.com) to download and install
    - Pull required models using your terminal:
      ```bash
-     ollama pull qwen3.5  # serving as a chat model, feel free to change it to your preferred ones (models with small hallucination rate are recommended for better RAG performance)
+     ollama pull qwen3.5  # serving as a chat model, feel free to change it to your preferred ones (i.e., I recommend models with smaller hallucination rate for better RAG performance)
      ollama pull nomic-embed-text  # serving as embedding model with 2K context
      ollama pull lfm2.5-thinking:1.2b  # serving as guardrails to adequately route the user queries 
      ```
