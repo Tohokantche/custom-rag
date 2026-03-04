@@ -10,7 +10,7 @@ A simple and effective RAG pipeline that you can run locally and customise it fo
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
 - 🧠 **Multi-Query and Re-ranking RAG** - Smarter retrieval and generation with source citations
 - 🔍 **Hybrid search** - Semantic search combined with keyword-based search for accurate retrieval
-- 🛡️ **Queries routing and Guardrails** - Automatcally handling toxic/malicious requests and hiting RAG only when neccessary 
+- 🛡️ **Queries routing and Guardrails** - Automatcally handling toxic/malicious requests 
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB 
 - ⚙️ **Advanced configuration** - Based on your data, tune your retrieval hyper-parameters for optimal performance 
 
