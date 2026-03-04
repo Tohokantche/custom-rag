@@ -5,7 +5,10 @@ from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 import streamlit as st
-import os, shutil
+import os
+
+# Paddle OCR for ingestion
+# os.environ["OCR_AGENT"] = "unstructured.partition.utils.ocr_models.paddle_ocr.OCRAgentPaddle"
 
 PERSIST_DIRECTORY = os.path.join("data", "vectors")
 logger = logging.getLogger(__name__)
@@ -41,11 +44,10 @@ class EmbeddingsStore:
             logger.info(f"File saved to temporary path: {path}")
 
         # Load and create chunk
-        # strategy="hi_res", languages=["ita", "eng"] 
         loader = UnstructuredPDFLoader(path)
         data = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=int(os.getenv("chunk_size",1500)),
-                                                        chunk_overlap=int(os.getenv("chunk_overlap", 100)))
+                                                        chunk_overlap=int(os.getenv("chunk_overlap", 80)))
         chunks = text_splitter.split_documents(data)
         logger.info(f"Document split into {len(chunks)} chunks")
 
@@ -57,6 +59,7 @@ class EmbeddingsStore:
                 "chunk_index": i,
                 "source_file": file_upload.name
             })
+            logger.info(f"Chunck info : {chunk.metadata}")
 
         # Create vector DB with unique collection
         collection_name = f"pdf_{abs(hash(file_upload.name + pdf_id))}"
@@ -69,6 +72,7 @@ class EmbeddingsStore:
             persist_directory=PERSIST_DIRECTORY,
             collection_name=collection_name
         )
+        
         logger.info("Vector DB created with persistent storage")
         return vector_db
 
