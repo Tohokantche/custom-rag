@@ -23,17 +23,19 @@ warnings.filterwarnings('ignore', category=UserWarning)
 logger = logging.getLogger(__name__)
 
 # Initialise logging preferences
-logging.basicConfig(
-        level=logging.INFO,
-        # {%(pathname)s:%(lineno)d}
-        format='%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=[
-            logging.FileHandler(os.path.join("logs", "app.log"), mode='w'), 
-            logging.StreamHandler(sys.stdout)         
-        ],
-        force=True 
-    )
+if "logs" not in st.session_state:
+    st.session_state["logs"] = True
+    logging.basicConfig(
+            level=logging.INFO,
+            # {%(pathname)s:%(lineno)d}
+            format='%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            handlers=[
+                logging.FileHandler(os.path.join("logs", "app.log"), mode='w'), 
+                logging.StreamHandler(sys.stdout)         
+            ],
+            force=True 
+        )
 
 # Streamlit page configuration
 st.set_page_config(
