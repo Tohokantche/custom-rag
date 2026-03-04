@@ -1,5 +1,5 @@
 # Plug-and-Play Ollama RAG
-A simple and effective RAG pipeline that you can use locally and customise it for zero dollar.
+A simple and effective RAG pipeline that you can run locally and customise it for ZERO dollar.
 
 ## Screenshots
 ![Ollama RAG ](screenshot.png "")
@@ -8,10 +8,10 @@ A simple and effective RAG pipeline that you can use locally and customise it fo
 
 - 🔒 **100% Local** - All processing logic and data remain on your local machine
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
-- 🧠 **Multi-Query and Re-ranking RAG** - Smarter retrieval with source citations
+- 🧠 **Multi-Query and Re-ranking RAG** - Smarter retrieval and generation with source citations
 - 🔍 **Hybrid search** - Semantic search combined with keyword-based search for accurate retrieval
+- 🛡️ **Queries routing and Guardrails** - Automatcally handling toxic/malicious requests and hiting RAG only when neccessary 
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB 
-- 🛡️ **Queries routing and Guardrails** - Handling toxic, malicious requests and hiting RAG only when neccessary 
 - ⚙️ **Advanced configuration** - Based on your data, tune your retrieval hyper-parameters for optimal performance 
 
 ## Getting Started
