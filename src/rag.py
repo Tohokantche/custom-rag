@@ -1,5 +1,6 @@
-import logging
-from typing import Dict, List, Tuple
+import logging, copy
+import streamlit as st
+from typing import Dict, List
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate, HumanMessagePromptTemplate
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
@@ -7,26 +8,54 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
+from langchain_core.messages import SystemMessage
+
 
 logger = logging.getLogger(__name__)
 
 class RagLogic:
+    
+    """
+            The actulal RAG logic
+        
+    """
 
-    @staticmethod
-    def process_question_multi_pdf(
+    def __init__(self, selected_model: str, router_model:str="lfm2.5-thinking:1.2b"):
+    
+        self.router_template = """
+            Accurately classify the query into exactly one category: 
+            'retrieval', 'casual', or 'unsure'.
+
+            - 'retrieval': explicit request for external facts/data that requires specific document/database access
+            - 'casual':  small talk/greetings/casual chat/personal question.
+            - 'unsure':  small talk that are ambiguous or unclear or vague or unrelated to the context.
+                                                                                                               
+            Query: {question}
+            Category:"""
+
+        self.chat_model = ChatOllama(model=selected_model, temperature=0.6, top_p=0.95, top_k=20)
+        try :
+            self.router_model = ChatOllama(model=router_model, temperature=0.1, top_k=50)
+        except Exception as e:
+            logger.error(f"Unable to load the router model {router_model}: {e}")
+            logger.warning(f"Falling back to the chat model {selected_model}.")
+            self.router_model = ChatOllama(model=selected_model, temperature=0.1)
+            st.warning('Using chat model as a router. Performance might degrade and response might be slow !', icon="⚠️")
+
+        self.chat_context = None
+        self.sources = None
+        self.response= None
+
+    def retrieve_doc(
+        self,
         question: str,
         pdfs_dict: Dict[str, Dict],
-        selected_model: str,
-        chat_context,
         config : Dict = None
-    ) -> Tuple[str, List[Dict]]:
+    ):
         
         """Query across multiple PDFs with source attribution."""
-        
         logger.info(f"Processing question across {len(pdfs_dict)} PDFs: {question}")
-        llm = ChatOllama(model=selected_model)
-
-        # Query prompt
+         # Query prompt
         QUERY_PROMPT = PromptTemplate(
             input_variables=["question"],
             template="""You are a helpful AI language model assistant. Your task is to generate exactly 2
@@ -34,7 +63,7 @@ class RagLogic:
             database. By generating multiple semantically faithful perspectives on the user question, your 
             goal is to help the user overcome some of the limitations of the distance-based similarity search. 
             Provide these alternative questions separated by newlines, and stick as much as you can to the 
-            semantic of the original question without hallucinating.
+            semantic information of the original question without hallucinating.
             Original question: {question}"""
         )
 
@@ -47,28 +76,32 @@ class RagLogic:
 
             # Setup Multi querry retriever
             retriever = MultiQueryRetriever.from_llm(
-                vector_db.as_retriever(search_kwargs={"k": 7}),
-                llm,
+                vector_db.as_retriever(search_kwargs={"k": 5}),
+                self.chat_model,
                 prompt=QUERY_PROMPT
             )
             try:
                 if config['h_search'] and config :
                     logger.info(f"Initialising the hybrid search strategy")
+                    
                     # Setup BM25 Retriever (Keyword search)
-                    bm25_retriever = BM25Retriever.from_documents([Document(page_content=doc) for doc in vector_db.get()['documents']])
-                    bm25_retriever.k = 7 
+                    bm25_retriever = BM25Retriever.from_documents(
+                        [Document(page_content=doc, metadata=metadata) for doc, metadata 
+                         in zip(vector_db.get()['documents'], vector_db.get()['metadatas'])])
+                    bm25_retriever.k = 5 
 
                     # Weighted fusion of the retrivers 
                     ensemble_retriever = EnsembleRetriever(
                                 retrievers=[bm25_retriever, retriever],
-                                weights=[0.3, 0.7]
+                                weights=[0.35, 0.65]
                             )
                     docs = ensemble_retriever.invoke(question) 
                 else:
                     docs = retriever.invoke(question)
 
                 logger.info(f"Retrieved {len(docs)} documents from {pdf_data['name']}")
-                # Ensure metadata
+                
+                # Ensure metadata is collected for referencing
                 for doc in docs:
                     if "pdf_name" not in doc.metadata:
                         doc.metadata["pdf_name"] = pdf_data["name"]
@@ -76,7 +109,7 @@ class RagLogic:
                         doc.metadata["pdf_id"] = pdf_id
                     if config['re_ranker'] and config :
                         temp_querry_docs_pairs.append((question, doc.page_content))
-                        temp_sources.append(doc.metadata.get("pdf_name", "Unknown"))
+                        temp_sources.append(doc.metadata)
                 all_retrieved_docs.extend(docs)
                 
             except Exception as e:
@@ -92,56 +125,106 @@ class RagLogic:
             logger.info(f"Re-ranking the retreived documents")
             re_rank_documents = config['re_ranker'].get_ranked_document(temp_querry_docs_pairs, temp_sources)
             for score, doc, source in re_rank_documents:
+
                 # Keep only documents/chucks with similarity greater or equal to 0.35
                 if score >= 0.35:
-                    context_parts.append(f"[Source: {source}]\n{doc}\n")
+                    context_parts.append(f"[Source: {source.get('pdf_name', 'Unknown')}]\n{doc}\n")
         else:
-            for doc in all_retrieved_docs[:10]:  # Top 10 chunks
+            # Keep Top 10 chunks
+            for doc in all_retrieved_docs if len(all_retrieved_docs) < 10 else all_retrieved_docs[:10]: 
                 source = doc.metadata.get("pdf_name", "Unknown")
                 context_parts.append(f"[Source: {source}]\n{doc.page_content}\n")
+        return  "\n---\n".join(context_parts), all_retrieved_docs
+        
+    
+    def process_question_multi_pdf(
+        self,
+        question: str,
+        pdfs_dict: Dict[str, Dict],
+        chat_context: List,
+        config : Dict = None
+    ):
+        self.chat_context = chat_context
+        formatted_context, all_retrieved_docs = None, None
 
-        formatted_context = "\n---\n".join(context_parts)
+        logger.info(f"Classifying the user query: {question}")
+        router_messages = [
+                    SystemMessage(content=" You are an user intent detector. Your role is to accurately " \
+                    "classify the user intent without hallucinating.")
+                ]
+        
+        # When the question has very small number of characters we auto-treat it as a casual query
+        router_response = "casual"
+        if not (len(question) < 12):
+            temp_chat = copy.deepcopy(chat_context)
+            router_messages.extend(temp_chat)
+            router_messages.append(HumanMessagePromptTemplate.from_template(self.router_template))
+            router_chain = (
+                {"context": lambda x: x["context"], "question": lambda x: x["question"]}
+                | ChatPromptTemplate.from_messages(router_messages)
+                | self.router_model 
+                | StrOutputParser()
+            )
+            router_response = router_chain.invoke({"question": question, "context": self.chat_context})
+        if "retrieval" in router_response:
+            logger.info(f"{question} is clasified as a retrival query.")
+            formatted_context, all_retrieved_docs = self.retrieve_doc(question, pdfs_dict, config)
+            
+            # RAG prompt with source awareness
+            template = """Answer the question based ONLY on the following context from one or multiple PDF documents.
+                Please only provide HIGHLY relevant information and do not hallucinate.
+                Each section is marked with its source document.
 
-        # RAG prompt with source awareness
-        template = """Answer the question based ONLY on the following context from one or multiple PDF documents.
-        Please only provide HIGHLY relevant information and do not hallucinate.
-        Each section is marked with its source document.
+                When answering:
+                1. Cite only the relevant source document name for each piece of information
+                2. If information comes from multiple sources, mention all relevant sources
+                3. If sources contradict, note the discrepancy and cite both
 
-        When answering:
-        1. Cite only the relevant source document name for each piece of information
-        2. If information comes from multiple sources, mention all relevant sources
-        3. If sources contradict, note the discrepancy and cite both
+                Context:
+                {context}
 
-        Context:
-        {context}
+                Question: {question}
 
-        Question: {question}
+                Answer (include source citations):"""
 
-        Answer (include source citations):"""
+        elif "casual" in router_response:
+            logger.info(f"{question} is clasified as a casual query.")
+            template = """
+                You are a friendly chatbot. Respond casually to: {question}
+            """
+        else:
+            logger.info(f"{question} is clasified as unsure query intent.")
+            template = """
+                 Respond or ask politely for clarification about the query : {question}
+            """
+            
+        self.chat_context.append(HumanMessagePromptTemplate.from_template(template))
+        decision_chain = ChatPromptTemplate.from_messages(self.chat_context) | self.chat_model
 
-        #prompt = ChatPromptTemplate.from_template(template)
-        #chat_context.append(SystemMessage(content="You are a helpful assistant."))
-        chat_context.append(HumanMessagePromptTemplate.from_template(template))
-        chat_messages= ChatPromptTemplate.from_messages(chat_context)
-
-        chain = (
-            {"context": lambda x: formatted_context, "question": lambda x: x}
-            | chat_messages #prompt
-            | llm
+        response_chain = (
+            {"context": lambda x: formatted_context, "question": lambda x: x["question"]} 
+            | decision_chain
             | StrOutputParser()
-        )
+            )
 
-        response = chain.invoke(question)
-        logger.info("Generated response with source attribution")
+        logger.info("Generating response with source attribution")
+        response = ""
 
-        # Extract source details
+        for chunk in response_chain.stream({"question": question}):
+                response+= chunk
+                yield chunk
+
         source_details = [
-            {
-                "pdf_name": doc.metadata.get("pdf_name"),
-                "pdf_id": doc.metadata.get("pdf_id"),
-                "chunk_index": doc.metadata.get("chunk_index", 0)
-            }
-            for doc in all_retrieved_docs[:12]
-        ]
-        return response, source_details
+                    {
+                        "pdf_name": doc.metadata.get("pdf_name"),
+                        "pdf_id": doc.metadata.get("pdf_id"),
+                        "chunk_index": doc.metadata.get("chunk_index"),
+                        "chunk_value": doc.page_content.strip()
+                    }
+                    for doc in all_retrieved_docs
+                ] if all_retrieved_docs else None
+        
+        self.response = response
+        self.sources = source_details
+        
     
