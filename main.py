@@ -59,15 +59,13 @@ def main() -> None:
     st.subheader("🧠 Plug-and-play Ollama RAG", divider="gray", anchor=False)
 
     # Get available ollama models
-    if "model_names" not in st.session_state:
-        st.session_state["model_names"] = True
-        try:
-            models_info = ollama.list()
-            available_models = extract_model_names(models_info)
-        except Exception as e:
-            del st.session_state["model_names"]
-            st.error(e, icon="⛔️")
-            logger.error(f"Please make sure that ollama is installed on your system: {e}")
+    try:
+        models_info = ollama.list()
+        available_models = extract_model_names(models_info)
+    except Exception as e:
+
+        st.error(e, icon="⛔️")
+        logger.error(f"Please make sure that ollama is installed on your system: {e}")
 
     download_attempt = 0
     model_threads = None
