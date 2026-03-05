@@ -5,7 +5,8 @@ from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 import streamlit as st
-import os
+from unstructured.cleaners.core import clean, group_broken_paragraphs
+import os, re
 
 # Paddle OCR for ingestion
 # os.environ["OCR_AGENT"] = "unstructured.partition.utils.ocr_models.paddle_ocr.OCRAgentPaddle"
@@ -43,11 +44,18 @@ class EmbeddingsStore:
             f.write(file_upload.getvalue())
             logger.info(f"File saved to temporary path: {path}")
 
-        # Load and create chunk
-        loader = UnstructuredPDFLoader(path)
+        # Load, clean and create chunk
+        loader = UnstructuredPDFLoader(
+            path,
+            post_processors=[
+                    lambda text: group_broken_paragraphs(EmbeddingsStore.remove_page_number_text(clean(text, 
+                            extra_whitespace=False, dashes=True, trailing_punctuation= True,lowercase = True)))
+                             ]
+            )
         data = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=int(os.getenv("chunk_size",1500)),
-                                                        chunk_overlap=int(os.getenv("chunk_overlap", 80)))
+                                                        chunk_overlap=int(os.getenv("chunk_overlap", 80)),
+                                                        add_start_index=True)
         chunks = text_splitter.split_documents(data)
         logger.info(f"Document split into {len(chunks)} chunks")
 
@@ -105,3 +113,17 @@ class EmbeddingsStore:
         else:
             st.error("No vector database found to delete.")
             logger.warning("Attempted to delete vector DB, but none was found")
+
+    @staticmethod
+    def remove_page_number_text(text: str) -> str:
+        '''
+        Docstring for remove_page_number_text
+        
+        :param text: Description
+        :type text: str
+        :return: Description
+        :rtype: str
+        '''
+        text = re.sub(r'(?i)page\s+\d+(\s+of\s+\d+)?', '', text)
+        text = re.sub(r'^\s*[-–—]?\s*\d+\s*[-–—]?\s*$', '', text)
+        return text.strip()
