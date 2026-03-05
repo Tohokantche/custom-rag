@@ -10,7 +10,7 @@ A simple and effective RAG pipeline that can be run and customised locally for Z
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
 - 🧠 **Multi-Query RAG** - Smarter and rich retrieval with source citations
 - 🔍 **Hybrid search RAG** - Semantic search combined with keyword-based search for accurate retrieval
-- 📊 **Re-ranking RAG** - Re-ranking the retrieved documents against user query for higher accuracy
+- 📊 **Re-ranking RAG** - Re-ranking the retrieved documents based on their relevance to the query
 - 🛡️ **Queries routing and Guardrails** - Automated routing and handling of toxic/malicious requests 
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB 
 - ⚙️ **Advanced configuration** - Based on your data, tune the retrieval hyper-parameters for optimal performance 
