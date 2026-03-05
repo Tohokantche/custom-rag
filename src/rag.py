@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class RagLogic:
     
     """
-            The actulal RAG logic
+        The actulal RAG logic
         
     """
 
@@ -25,7 +25,7 @@ class RagLogic:
         # Template for the queries router/guardrails
         self.router_template = """
             Accurately classify the query into exactly one category: 
-            'retrieval', 'casual', toxic, or 'unsure'.
+            'retrieval', 'casual', toxic, or 'unsure'. You can use previous interaction as a guidance.
 
             - 'retrieval': explicit request for external facts/data that requires specific document/database access
             - 'casual':  small talk/greetings/casual chat/personal conversation
@@ -124,6 +124,7 @@ class RagLogic:
 
         # Re-rankers the retrieved documents
         if config['re_ranker'] and config:
+
             logger.info(f"Re-ranking the retreived documents")
             re_rank_documents = config['re_ranker'].get_ranked_document(temp_querry_docs_pairs, temp_sources)
             for score, doc, source in re_rank_documents:
@@ -196,12 +197,12 @@ class RagLogic:
         elif "casual" in router_response:
             logger.info(f"{question} is clasified as a casual query.")
             template = """
-                You are a friendly chatbot. Respond casually and engagedly to: {question}
+                Respond casually or based on the previous interactions to: {question}
             """
         elif "toxic" in router_response:
             logger.info(f"{question} is clasified as a toxic/malicious query.")
             template = """
-                You are a helpful assistant. Respond vaguely to : {question}
+                You are a helpful assistant. Respond vaguely based on previous interactions to : {question}
             """
         else:
             logger.info(f"{question} is clasified as unsure query intent.")
@@ -230,7 +231,7 @@ class RagLogic:
                         "pdf_name": doc.metadata.get("pdf_name"),
                         "pdf_id": doc.metadata.get("pdf_id"),
                         "chunk_index": doc.metadata.get("chunk_index"),
-                        "chunk_value": doc.page_content.strip()
+                        "chunk_value": doc.page_content
                     }
                     for doc in all_retrieved_docs
                 ] if all_retrieved_docs else None
