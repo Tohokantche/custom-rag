@@ -110,3 +110,4 @@ class DocumentProcessor:
             DocumentProcessor.delete_pdf(pdf_id)
         DocumentProcessor.session_state["pdfs"] = {}
         DocumentProcessor.session_state["active_pdfs"] = []
+
