@@ -13,7 +13,7 @@ from pathlib import Path
 from langchain_core.messages import  AIMessage, SystemMessage
 from src.utils import render_config, extract_model_names, generate_pdf_id, LoadReRanker, DownloadModels
 from src.documents import DocumentProcessor
-from src.embeddings import EmbeddingsStore, PERSIST_DIRECTORY
+from src.embeddings import PERSIST_DIRECTORY
 from src.rag import RagLogic
 
 # Suppress torch warning
@@ -52,48 +52,18 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+
 def main() -> None:
     """
     Main function to run the Streamlit application.
     """
     st.subheader("🧠 Plug-and-play Ollama RAG", divider="gray", anchor=False)
-
-    # Get available ollama models
-    try:
-        models_info = ollama.list()
-        available_models = extract_model_names(models_info)
-    except Exception as e:
-
-        st.error(e, icon="⛔️")
-        logger.error(f"Please make sure that ollama is installed on your system: {e}")
-
-    download_attempt = 0
-    model_threads = None
-
-    # Default : Embedding model, chat model, router model, re-ranking model. Feel free do download your own.
-    model_names =["nomic-embed-text:latest", "qwen3:1.7b", "lfm2.5-thinking:1.2b", "zeroentropy/zerank-1-small"]
-
-    # In the case the user failed to manually download the models we did it for him/her
-    while (len(available_models) <3) and (download_attempt < 2) :
-        with st.status("Downloading embeddings and chat models ..."):
-            model_threads = [DownloadModels(model_name) for model_name in model_names[:-1]].append(LoadReRanker(model_names[-1]))
-            for thread in model_threads:
-                thread.start()
-            for thread in model_threads:
-                thread.join()
-            for i, thread in enumerate(model_threads):
-                if thread.return_value:
-                    logger.info(f"Sucessfully download models: {thread.model_name}")
-                
-            available_models = extract_model_names(models_info) 
-            download_attempt +=1
-
-    # Create layout
-    col1, col2 = st.columns([1, 1])
+    st.set_page_config(initial_sidebar_state="collapsed")
 
     # Initialize session state
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
+    if "lang_messages" not in st.session_state:
         st.session_state["lang_messages"] = [
                     SystemMessage(content="You are a helpful assistant.")
                 ]
@@ -111,17 +81,56 @@ def main() -> None:
         st.session_state["use_re_ranker"] = False
     if "re_ranker" not in st.session_state:
         st.session_state["re_ranker"] = None
+    if "uploader_key" not in st.session_state:
+        st.session_state["uploader_key"] = 0
+    if "model_name" not in st.session_state:
+        st.session_state["model_name"] = []
 
-    # Instantiate classes
+    def clear_file():
+        # Increment key to reset the drag and drop file widget
+        st.session_state.uploader_key += 1
+
+    # Get available ollama models
+    try:
+        if not st.session_state["model_name"]:
+            models_info = ollama.list()
+            st.session_state["model_name"] = extract_model_names(models_info)
+            #st.session_state["model_name"] = st.session_state["model_name"]
+    except Exception as e:
+        st.error(e, icon="⛔️")
+        logger.error(f"Please make sure that ollama is installed on your system: {e}")
+
+    download_attempt = 0
+    model_threads = None
+
+    # Default : Embedding model, chat model, router model, re-ranking model. Feel free do download your own.
+    model_names =["nomic-embed-text:latest", "qwen3:1.7b", "lfm2.5-thinking:1.2b", "zeroentropy/zerank-1-small"]
+
+    # In the case the user failed to manually download the models we did it for him/her
+    while (len(st.session_state["model_name"]) <3) and (download_attempt < 2) :
+        with st.status("Downloading embeddings and chat models ..."):
+            model_threads = [DownloadModels(model_name) for model_name in model_names[:-1]].append(LoadReRanker(model_names[-1]))
+            for thread in model_threads:
+                thread.start()
+            for thread in model_threads:
+                thread.join()
+            for i, thread in enumerate(model_threads):
+                if thread.return_value:
+                    logger.info(f"Sucessfully download models: {thread.model_name}")
+                
+            st.session_state["model_name"] = extract_model_names(models_info) 
+            download_attempt +=1
+
+    # Create layout
+    col1, col2 = st.columns([1, 1])
+
     doc_processor = DocumentProcessor(st.session_state)
-    emb_store = EmbeddingsStore(st.session_state)
     
-
     # Model selection
-    if available_models:
+    if st.session_state["model_name"]:
         selected_model = col2.selectbox(
             "Pick a model available locally on your system ↓",
-            available_models,
+            st.session_state["model_name"],
             key="model_select"
         )
         # Initialise RagLogic with selected model
@@ -195,8 +204,6 @@ def main() -> None:
     if use_sample:
         # Use the sample PDF
         sample_pdf_path = Path("data/pdfs/sample/WEF_Global_Risks_Report_2026.pdf")
-        # Reset the context
-        st.session_state["lang_messages"] = [SystemMessage(content="You are a helpful assistant.")]
         if sample_pdf_path.exists():
             # Check if already loaded
             sample_id = "sample_pdf"
@@ -221,15 +228,12 @@ def main() -> None:
             st.error("Sample PDF file not found in the current directory.")
     else:
         # Regular file upload with multi-file support
-        #file_uploads= None
         file_uploads = col1.file_uploader(
             "Upload PDF files ↓",
             type="pdf",
             accept_multiple_files=True,
-            key="pdf_uploader"
+            key=f"uploader_{st.session_state.uploader_key}"
         )
-        # Reset the context
-        st.session_state["lang_messages"] = [SystemMessage(content="You are a helpful assistant.")]
         if file_uploads:
             for file_upload in file_uploads:
                 pdf_id = generate_pdf_id(file_upload)
@@ -266,11 +270,11 @@ def main() -> None:
                         f"Chunks: {pdf_data['doc_count']} | "
                         f"Pages: {len(pdf_data['pages'])}"
                     )
-
                     # Quick remove button
                     if st.button("🗑️ Remove", key=f"remove_{pdf_id}"):
-                        doc_processor.delete_pdf(pdf_id)
                         st.session_state["new_pdfs"] = False
+                        doc_processor.delete_pdf(pdf_id)
+                        clear_file()
                         st.rerun()
 
                     st.divider()
@@ -279,7 +283,7 @@ def main() -> None:
                     for page_idx, page_image in enumerate(pdf_data['pages']):
                         st.caption(f"Page {page_idx + 1}")
                         st.image(page_image, width=zoom_level)
-
+                    
                     # Spacing between PDFs
                     st.markdown("---")
                 if st.session_state["new_pdfs"]:
@@ -287,16 +291,6 @@ def main() -> None:
                     st.rerun() 
     else:
         col1.info("Upload PDF files to view them here.")
-
-    # Delete collection button
-    delete_collection = col1.button(
-        "⚠️ Delete collection", 
-        type="secondary",
-        key="delete_button"
-    )
-
-    if delete_collection:
-        emb_store.delete_vector_db(st.session_state["vector_db"])
 
     # Chat interface
     with col2:
@@ -316,31 +310,33 @@ def main() -> None:
                         with st.expander("📚 Sources:"):
                             sources_by_pdf = {}
                             sources_by_value = {}
+                            sources_by_index = {}
                             for src in message["sources"]:
                                 pdf_name = src.get("pdf_name", "Unknown")
                                 if pdf_name not in sources_by_pdf:
                                     sources_by_pdf[pdf_name] = 0
                                 sources_by_pdf[pdf_name] += 1
                                 sources_by_value[f"{pdf_name}_{sources_by_pdf[pdf_name]-1}"] = src.get("chunk_value")
+                                sources_by_index[f"{pdf_name}_{sources_by_pdf[pdf_name]-1}"] = src.get("chunk_index")
 
                             for pdf_name, count in sources_by_pdf.items():
-                                with st.expander(f"- **{pdf_name}** ({count} chunks) -- Showing Top 7"):
+                                with st.expander(f"- **{pdf_name}** ({count} chunks) -- Showing Top {count if count <7 else 7}"):
                                     for id in range(0, count) if count < 7 else range(0, 7):
-                                        with st.expander(f"🧱 chunk_id : {id}"):
+                                        with st.expander(f"🧱 chunk_id : {sources_by_index[f'{pdf_name}_{id}']}"):
                                             st.markdown(sources_by_value[f"{pdf_name}_{id}"])
 
         # Chat input and processing
         if prompt := st.chat_input("Enter a prompt here...", key="chat_input"):
-            try:
-                # Add user message to chat
-                st.session_state["messages"].append({"role": "user", "content": prompt})
-                with message_container.chat_message("user", avatar="😎"):
-                    st.markdown(prompt)
+            # Add user message to chat
+            st.session_state["messages"].append({"role": "user", "content": prompt})
+            with message_container.chat_message("user", avatar="😎"):
+                st.markdown(prompt)
 
-                # Process and display assistant response
-                with message_container.chat_message("assistant", avatar="🤖"):
-                    if st.session_state.get("pdfs"):
-                        with st.spinner(":green[processing...]"):
+            # Process and display assistant response
+            with message_container.chat_message("assistant", avatar="🤖"):
+                if st.session_state.get("pdfs"):
+                    with st.spinner(":green[processing...]"):
+                        try:
                             st.write_stream(
                                 rag_logic.process_question_multi_pdf(
                                         prompt,
@@ -351,46 +347,46 @@ def main() -> None:
                                         }
                                     )
                                 )
-                        sources = rag_logic.sources
-                        response = rag_logic.response
-                        
-                        # Display sources
-                        if sources:
-                            st.divider()
-                            # st.caption("📚 Sources:")
-                            with st.expander("📚 Sources:"):
-                                sources_by_pdf = {}
-                                sources_by_value = {}
-                                for src in sources:
-                                    pdf_name = src.get("pdf_name", "Unknown")
-                                    if pdf_name not in sources_by_pdf:
-                                        sources_by_pdf[pdf_name] = 0
-                                    sources_by_pdf[pdf_name] += 1
-                                    sources_by_value[f"{pdf_name}_{sources_by_pdf[pdf_name]-1}"] = src.get("chunk_value")
+                        except Exception as error_msg:
+                            st.error(error_msg, icon="⛔️")
+                            logger.error(f"An unexpected error occurs : {error_msg}")
+                    sources = rag_logic.sources
+                    response = rag_logic.response
+                    
+                    # Display sources
+                    if sources:
+                        st.divider()
+                        # st.caption("📚 Sources:")
+                        with st.expander("📚 Sources:"):
+                            sources_by_pdf = {}
+                            sources_by_value = {}
+                            sources_by_index = {}
+                            for src in sources:
+                                pdf_name = src.get("pdf_name", "Unknown")
+                                if pdf_name not in sources_by_pdf:
+                                    sources_by_pdf[pdf_name] = 0
+                                sources_by_pdf[pdf_name] += 1
+                                sources_by_value[f"{pdf_name}_{sources_by_pdf[pdf_name]-1}"] = src.get("chunk_value")
+                                sources_by_index[f"{pdf_name}_{sources_by_pdf[pdf_name]-1}"] = src.get("chunk_index")
 
-                                for pdf_name, count in sources_by_pdf.items():
-                                    with st.expander(f"- **{pdf_name}** ({count} chunks) -- Showing Top 7"):
-                                        for id in range(0, count) if count < 7 else range(0, 7):
-                                            with st.expander(f"🧱 chunk_id : {id}"):
-                                                    st.markdown(sources_by_value[f"{pdf_name}_{id}"])
-                    else:
-                        st.warning("Please, upload PDF files first.")
-                        response = None
-                        sources = None
+                            for pdf_name, count in sources_by_pdf.items():
+                                with st.expander(f"- **{pdf_name}** ({count} chunks) -- Showing Top {count if count <7 else 7}"):
+                                    for id in range(0, count) if count < 7 else range(0, 7):
+                                        with st.expander(f"🧱 chunk_id : {sources_by_index[f'{pdf_name}_{id}']}"):
+                                                st.markdown(sources_by_value[f"{pdf_name}_{id}"])
+                else:
+                    st.warning("Please, upload PDF files first.")
+                    response = None
+                    sources = None
 
-                # Add assistant response to chat history with sources
-                if response:
-                    st.session_state["messages"].append({
-                        "role": "assistant",
-                        "content": response,
-                        "sources": sources
-                    })
-                    st.session_state["lang_messages"].append(AIMessage(content=response)) 
-                    #logger.error(f"Adding AI response to the context : {response}")
-
-            except Exception as e:
-                st.error(e, icon="⛔️")
-                logger.error(f"An unexpected error occurs : {e}")
+            # Add assistant response to chat history with sources
+            if response:
+                st.session_state["messages"].append({
+                    "role": "assistant",
+                    "content": response,
+                    "sources": sources
+                })
+                st.session_state["lang_messages"].append(AIMessage(content=response)) 
         else:
             if not st.session_state.get("pdfs"):
                 st.warning("Upload PDF files or use the sample PDF to begin chat ...")
