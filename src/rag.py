@@ -161,7 +161,7 @@ class RagLogic:
         config : Dict = None
     ):
         self.chat_context = copy.deepcopy(
-            chat_context if len(chat_context) < 7 else chat_context[-7:]
+            chat_context if len(chat_context) < 8 else chat_context[-7:]
             )
         formatted_context, all_retrieved_docs = None, None
 
@@ -173,7 +173,7 @@ class RagLogic:
         
         # By default classify queries as casual
         router_response = "casual"
-        prune_context = self.chat_context if len(self.chat_context) < 5 else self.chat_context[-4:]
+        prune_context = chat_context if len(chat_context) < 5 else chat_context[-4:]
         # Only route queries with more than 12 characters to prevent unecessary computation
         if not (len(question) < 12):
 
