@@ -1,93 +1,72 @@
-2026-03-05 22:18:06 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:18:06 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:18:06 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:18:10 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:18:10 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:18:10 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:18:17 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:18:17 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:18:17 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:18:17 - src.documents - 30 - INFO - Processing PDF: 1607.08022v3.pdf with ID: pdf_5927739716006719626
-2026-03-05 22:18:17 - src.embeddings - 35 - INFO - Creating vector DB from file upload: 1607.08022v3.pdf
-2026-03-05 22:18:17 - src.embeddings - 45 - INFO - File saved to temporary path: data/pdfs/1607.08022v3.pdf
-2026-03-05 22:18:19 - pikepdf._core - 241 - INFO - pikepdf C++ to Python logger bridge initialized
-2026-03-05 22:18:20 - src.embeddings - 60 - INFO - Document split into 9 chunks
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 0, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 0, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 1025, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 1, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 2472, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 2, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 3643, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 3, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 4942, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 4, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 6339, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 5, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 7807, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 6, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 8886, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 7, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 70 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 10291, 'pdf_id': 'pdf_5927739716006719626', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 8, 'source_file': '1607.08022v3.pdf'}
-2026-03-05 22:18:20 - src.embeddings - 74 - INFO - Creating vector DB with collection name: pdf_8922015338835876773
-2026-03-05 22:18:21 - chromadb.telemetry.product.posthog - 22 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
-2026-03-05 22:18:23 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
-2026-03-05 22:18:23 - src.embeddings - 84 - INFO - Vector DB created with persistent storage
-2026-03-05 22:18:24 - src.documents - 43 - INFO - Extracted 6 pages from PDF
-2026-03-05 22:18:24 - src.documents - 57 - INFO - PDF stored in session state with 9 chunks
-2026-03-05 22:18:25 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:18:25 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:18:25 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:18:36 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:18:36 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:18:36 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:18:37 - src.rag - 153 - INFO - Classifying the user query: Hello !
-2026-03-05 22:18:37 - src.rag - 198 - INFO - Hello ! is clasified as a casual query.
-2026-03-05 22:18:37 - src.rag - 222 - INFO - Generating response with source attribution
-2026-03-05 22:18:39 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:18:55 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:18:55 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:18:55 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:18:55 - src.rag - 153 - INFO - Classifying the user query: How are you doing today ?
-2026-03-05 22:18:57 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:18:58 - src.rag - 198 - INFO - How are you doing today ? is clasified as a casual query.
-2026-03-05 22:18:58 - src.rag - 222 - INFO - Generating response with source attribution
-2026-03-05 22:18:59 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:19:14 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:19:14 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:19:14 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:19:15 - src.rag - 153 - INFO - Classifying the user query: Any information to share with me ?
-2026-03-05 22:19:15 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:19:16 - src.rag - 177 - INFO - Any information to share with me ? is clasified as a retrival query.
-2026-03-05 22:19:16 - src.rag - 59 - INFO - Processing question across 1 PDFs: Any information to share with me ?
-2026-03-05 22:19:16 - src.rag - 87 - INFO - Initialising the hybrid search strategy
-2026-03-05 22:19:17 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:19:23 - langchain_classic.retrievers.multi_query - 205 - INFO - Generated queries: ['What information would you like to share with me?  ', 'Can you share any information you have with me?']
-2026-03-05 22:19:24 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
-2026-03-05 22:19:24 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
-2026-03-05 22:19:24 - src.rag - 104 - INFO - Retrieved 8 documents from 1607.08022v3.pdf
-2026-03-05 22:19:24 - src.rag - 120 - INFO - Total documents retrieved: 8
-2026-03-05 22:19:24 - src.rag - 222 - INFO - Generating response with source attribution
-2026-03-05 22:19:30 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:20:20 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:20:20 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:20:20 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:20:20 - src.rag - 153 - INFO - Classifying the user query: Is that all you have at your disposal ?
-2026-03-05 22:20:24 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:20:26 - src.rag - 177 - INFO - Is that all you have at your disposal ? is clasified as a retrival query.
-2026-03-05 22:20:26 - src.rag - 59 - INFO - Processing question across 1 PDFs: Is that all you have at your disposal ?
-2026-03-05 22:20:26 - src.rag - 87 - INFO - Initialising the hybrid search strategy
-2026-03-05 22:20:27 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:20:38 - langchain_classic.retrievers.multi_query - 205 - INFO - Generated queries: ['Are there any other items you possess?  ', "Do you have anything else besides what's listed?"]
-2026-03-05 22:20:39 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
-2026-03-05 22:20:39 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
-2026-03-05 22:20:39 - src.rag - 104 - INFO - Retrieved 7 documents from 1607.08022v3.pdf
-2026-03-05 22:20:39 - src.rag - 120 - INFO - Total documents retrieved: 7
-2026-03-05 22:20:39 - src.rag - 222 - INFO - Generating response with source attribution
-2026-03-05 22:20:45 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:21:12 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:21:12 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:21:12 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:21:13 - src.rag - 153 - INFO - Classifying the user query: Thank you !
-2026-03-05 22:21:13 - src.rag - 198 - INFO - Thank you ! is clasified as a casual query.
-2026-03-05 22:21:13 - src.rag - 222 - INFO - Generating response with source attribution
-2026-03-05 22:21:14 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
-2026-03-05 22:21:21 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
-2026-03-05 22:21:21 - src.utils - 172 - INFO - Extracting model names from models_info
-2026-03-05 22:21:21 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
-2026-03-05 22:21:21 - src.rag - 153 - INFO - Classifying the user query: Bye !
-2026-03-05 22:21:21 - src.rag - 198 - INFO - Bye ! is clasified as a casual query.
-2026-03-05 22:21:21 - src.rag - 222 - INFO - Generating response with source attribution
-2026-03-05 22:21:22 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:50:13 - httpx - 1025 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2026-04-03 16:50:13 - src.utils - 172 - INFO - Extracting model names from models_info
+2026-04-03 16:50:13 - src.utils - 199 - INFO - Extracted model names: ('lfm2.5-thinking:1.2b', 'qwen3.5:0.8b', 'qwen3.5:2b', 'lfm2.5-thinking:1.2b_v1', 'qwen3:1.7b', 'smollm:135m', 'nomic-embed-text:latest')
+2026-04-03 16:50:27 - src.documents - 30 - INFO - Processing PDF: 1607.08022v3.pdf with ID: pdf_4971291899772705009
+2026-04-03 16:50:27 - src.embeddings - 36 - INFO - Creating vector DB from file upload: 1607.08022v3.pdf
+2026-04-03 16:50:27 - src.embeddings - 46 - INFO - File saved to temporary path: data/pdfs/1607.08022v3.pdf
+2026-04-03 16:50:30 - pikepdf._core - 241 - INFO - pikepdf C++ to Python logger bridge initialized
+2026-04-03 16:50:31 - src.embeddings - 61 - INFO - Document split into 9 chunks
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 0, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 0, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 1025, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 1, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 2472, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 2, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 3643, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 3, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 4942, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 4, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 6339, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 5, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 7807, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 6, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 8886, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 7, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 71 - INFO - Chunck info : {'source': 'data/pdfs/1607.08022v3.pdf', 'start_index': 10291, 'pdf_id': 'pdf_4971291899772705009', 'pdf_name': '1607.08022v3.pdf', 'chunk_index': 8, 'source_file': '1607.08022v3.pdf'}
+2026-04-03 16:50:31 - src.embeddings - 75 - INFO - Creating vector DB with collection name: pdf_3013834664315935258
+2026-04-03 16:50:32 - chromadb.telemetry.product.posthog - 22 - INFO - Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+2026-04-03 16:50:34 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 16:50:34 - src.embeddings - 84 - INFO - Vector DB created with persistent storage
+2026-04-03 16:50:35 - src.documents - 43 - INFO - Extracted 6 pages from PDF
+2026-04-03 16:50:35 - src.documents - 57 - INFO - PDF stored in session state with 9 chunks
+2026-04-03 16:50:59 - src.rag - 167 - INFO - Classifying the user query: What is the document about ?
+2026-04-03 16:51:00 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:51:13 - src.rag - 216 - INFO - 'What is the document about ?' is clasified as a casual query.
+2026-04-03 16:51:15 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:55:08 - src.rag - 167 - INFO - Classifying the user query: I'm talking about the  instance normalisation document.
+2026-04-03 16:55:11 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:55:24 - src.rag - 190 - INFO - 'I'm talking about the  instance normalisation document.' is clasified as a retrival query.
+2026-04-03 16:55:24 - src.rag - 69 - INFO - Processing question across 1 PDFs: I'm talking about the  instance normalisation document.
+2026-04-03 16:55:24 - src.rag - 100 - INFO - Initialising the hybrid search strategy
+2026-04-03 16:55:28 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:55:38 - langchain_classic.retrievers.multi_query - 205 - INFO - Generated queries: ['What is the document about instance normalization in machine learning?  ', 'What is the document about instance normalization, and what is its main purpose?  ', 'What is the document about instance normalization, and how is it applied in practice?']
+2026-04-03 16:55:39 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 16:55:39 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 16:55:39 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 16:55:39 - src.rag - 117 - INFO - Retrieved 4 documents from 1607.08022v3.pdf
+2026-04-03 16:55:39 - src.rag - 133 - INFO - Total documents retrieved: 4
+2026-04-03 16:55:39 - src.rag - 212 - INFO - Generating response with source attribution
+2026-04-03 16:55:43 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:57:56 - src.rag - 167 - INFO - Classifying the user query: What is the mathematical formulation of instance normilsation ?
+2026-04-03 16:57:59 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:58:20 - src.rag - 190 - INFO - 'What is the mathematical formulation of instance normilsation ?' is clasified as a retrival query.
+2026-04-03 16:58:20 - src.rag - 69 - INFO - Processing question across 1 PDFs: What is the mathematical formulation of instance normilsation ?
+2026-04-03 16:58:20 - src.rag - 100 - INFO - Initialising the hybrid search strategy
+2026-04-03 16:58:22 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:58:35 - langchain_classic.retrievers.multi_query - 205 - INFO - Generated queries: ['1. What is the mathematical formula for instance normalization?  ', '2. Can you explain the mathematical basis of instance normalization?  ', '3. What is the mathematical representation of instance normalization?']
+2026-04-03 16:58:36 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 16:58:36 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 16:58:36 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 16:58:36 - src.rag - 117 - INFO - Retrieved 4 documents from 1607.08022v3.pdf
+2026-04-03 16:58:36 - src.rag - 133 - INFO - Total documents retrieved: 4
+2026-04-03 16:58:36 - src.rag - 212 - INFO - Generating response with source attribution
+2026-04-03 16:58:40 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 16:59:12 - src.rag - 167 - INFO - Classifying the user query: Thank you !
+2026-04-03 16:59:12 - src.rag - 215 - INFO - 'Thank you !' is clasified as a casual query.
+2026-04-03 16:59:14 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 17:00:43 - src.rag - 167 - INFO - Classifying the user query: Can you help me to summarise the document ?
+2026-04-03 17:00:45 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 17:00:53 - src.rag - 190 - INFO - 'Can you help me to summarise the document ?' is clasified as a retrival query.
+2026-04-03 17:00:53 - src.rag - 69 - INFO - Processing question across 1 PDFs: Can you help me to summarise the document ?
+2026-04-03 17:00:53 - src.rag - 100 - INFO - Initialising the hybrid search strategy
+2026-04-03 17:00:55 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-04-03 17:01:03 - langchain_classic.retrievers.multi_query - 205 - INFO - Generated queries: ['Can you help me summarize the document ?  ', 'How can I create a concise overview of the document ?  ', 'What is the process for extracting key points from the document ?']
+2026-04-03 17:01:04 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 17:01:05 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 17:01:05 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/embed "HTTP/1.1 200 OK"
+2026-04-03 17:01:05 - src.rag - 117 - INFO - Retrieved 8 documents from 1607.08022v3.pdf
+2026-04-03 17:01:05 - src.rag - 133 - INFO - Total documents retrieved: 8
+2026-04-03 17:01:05 - src.rag - 212 - INFO - Generating response with source attribution
+2026-04-03 17:01:12 - httpx - 1025 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
