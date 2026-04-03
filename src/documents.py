@@ -56,9 +56,6 @@ class DocumentProcessor:
         DocumentProcessor.session_state["active_pdfs"].insert(0, pdf_id)
         logger.info(f"PDF stored in session state with {len(vector_db.get()['documents'])} chunks")
 
-        # Cleanup
-        # shutil.rmtree(temp_dir)
-        # logger.info(f"Temporary directory {temp_dir} removed")
 
     @staticmethod
     @st.cache_data
@@ -87,13 +84,13 @@ class DocumentProcessor:
         if pdf_id in DocumentProcessor.session_state["pdfs"]:
             pdf_data = st.session_state["pdfs"][pdf_id]
             logger.info(f"Deleting PDF: {pdf_data['name']} (ID: {pdf_id})")
-
-            # Delete vector collection
             try:
+                collection_id = pdf_data["vector_db"]._client.get_collection(name=pdf_data['collection_name']).id
+                # Delete vector collection
                 pdf_data["vector_db"].delete_collection()
-                logger.info(f"Deleted collection: {pdf_data['collection_name']}")
+                logger.info(f"Deleted collection: {pdf_data['collection_name']} - {collection_id}")
             except Exception as e:
-                logger.error(f"Error deleting collection: {e}")
+                logger.error(f"Error deleting collection: {e} - {collection_id}")
 
             # Remove from state
             del DocumentProcessor.session_state["pdfs"][pdf_id]
