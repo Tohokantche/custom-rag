@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, List
+from typing import Optional
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import UnstructuredPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -7,6 +7,7 @@ from langchain_ollama import OllamaEmbeddings
 import streamlit as st
 from unstructured.cleaners.core import clean, group_broken_paragraphs
 import os, re
+
 
 # Paddle OCR for ingestion
 # os.environ["OCR_AGENT"] = "unstructured.partition.utils.ocr_models.paddle_ocr.OCRAgentPaddle"
@@ -80,13 +81,12 @@ class EmbeddingsStore:
             persist_directory=PERSIST_DIRECTORY,
             collection_name=collection_name
         )
-        
         logger.info("Vector DB created with persistent storage")
         return vector_db
 
 
     @staticmethod
-    def delete_vector_db(vector_db: Optional[Chroma], collection_names : List= None) -> None:
+    def delete_vector_db(vector_db: Optional[Chroma]) -> None:
         """
         Delete the vector database and clear related session state.
 
@@ -96,9 +96,7 @@ class EmbeddingsStore:
         logger.info("Deleting vector DB")
         if vector_db is not None:
             try:
-                for collection_name in collection_names:
-                    vector_db.delete_collection(collection_name)
-                
+                vector_db.delete_collection()
                 # Clear session state
                 EmbeddingsStore.session_state.pop("pdf_pages", None)
                 EmbeddingsStore.session_state.pop("file_upload", None)
