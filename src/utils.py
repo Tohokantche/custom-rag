@@ -137,19 +137,19 @@ def render_config():
         dict: Contains chunk configuration
     """
     
-    with st.sidebar:
-        st.markdown("### ⚙️ Configuration")
-        with st.expander("🧱 Retrieval Settings", expanded=False):
-            chunk_size = st.number_input("Enter chunk size:", value=1500, min_value=256, max_value=10000, step=2, 
-                                          format="%i", help="Specify data chunk size")
-            chunk_overlap = st.number_input("Enter chunk overlap:", value=80, min_value=10, max_value=200, 
-                                             step=2, format="%i", help="Specify data chunk overlap")
-            st.divider()
-            h_search = st.checkbox("Use hybrid search", value = True, help="Combine semantic (default) with keyword search")
-            re_ranker = st.checkbox("Use re-ranker", help="Re-rank the retrieved documents for highly accurate responses")
-            if re_ranker:
-                st.warning('This might really slow down your RAG response time, as this demo run on free tier CPU cloud \
-                           with very limited ressources!', icon="⚠️")
+    #with st.sidebar:
+    st.markdown("### ⚙️ Configuration")
+    with st.expander("🧱 Retrieval Settings", expanded=True):
+        chunk_size = st.number_input("Enter chunk size:", value=1500, min_value=256, max_value=10000, step=2, 
+                                        format="%i", help="Specify data chunk size")
+        chunk_overlap = st.number_input("Enter chunk overlap:", value=80, min_value=10, max_value=200, 
+                                            step=2, format="%i", help="Specify data chunk overlap")
+        st.divider()
+        h_search = st.checkbox("Use hybrid search", value = True, help="Combine semantic (default) with keyword search")
+        re_ranker = st.checkbox("Use re-ranker", help="Re-rank the retrieved documents for highly accurate responses")
+        if re_ranker:
+            st.warning('This might really slow down your RAG response time, as this demo run on free tier CPU cloud \
+                        with limited ressources!', icon="⚠️")
     return {"chunk_size": str(chunk_size), "chunk_overlap": str(chunk_overlap), "re_ranker": re_ranker, "h_search": h_search}
 
 
