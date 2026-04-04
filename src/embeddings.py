@@ -18,8 +18,11 @@ logger = logging.getLogger(__name__)
 class EmbeddingsStore:
 
     session_state= None
+    emb_model_name = None
 
-    def __init__(self, session_state):
+    def __init__(self, emb_model_name : str, session_state):
+      
+        EmbeddingsStore.emb_model_name = emb_model_name
         EmbeddingsStore.session_state = session_state
 
     @staticmethod
@@ -74,7 +77,7 @@ class EmbeddingsStore:
         collection_name = f"pdf_{abs(hash(file_upload.name + pdf_id))}"
         logger.info(f"Creating vector DB with collection name: {collection_name}")
 
-        embeddings = OllamaEmbeddings(model="nomic-embed-text")
+        embeddings = OllamaEmbeddings(model=EmbeddingsStore.emb_model_name)
         vector_db = Chroma.from_documents(
             documents=chunks,
             embedding=embeddings,
