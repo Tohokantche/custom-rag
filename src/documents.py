@@ -11,16 +11,15 @@ PERSIST_DIRECTORY = os.path.join("data", "vectors")
 logger = logging.getLogger(__name__)
 
 
-class DocumentProcessor:
+class DocumentIngestion:
     
-    # Session state
     session_state = None
     emb_store = None
 
-    def __init__(self, session_state):
+    def __init__(self, session_state, emb_model_name = "nomic-embed-text"):
 
-        DocumentProcessor.session_state = session_state
-        DocumentProcessor.emb_store = EmbeddingsStore(session_state)
+        DocumentIngestion.session_state = session_state
+        DocumentIngestion.emb_store = EmbeddingsStore(emb_model_name, session_state)
 
     @staticmethod
     def process_and_store_pdf(file_upload, pdf_id: str, is_sample: bool = False):
@@ -35,7 +34,7 @@ class DocumentProcessor:
         path = os.path.join(temp_dir, file_upload.name)
 
         ### Create data store
-        vector_db = DocumentProcessor.emb_store.create_vector_db(file_upload, pdf_id)
+        vector_db = DocumentIngestion.emb_store.create_vector_db(file_upload, pdf_id)
 
         # Extract PDF pages
         with pdfplumber.open(file_upload if not is_sample else path) as pdf:
@@ -43,7 +42,7 @@ class DocumentProcessor:
         logger.info(f"Extracted {len(pdf_pages)} pages from PDF")
 
         # Store in session state
-        DocumentProcessor.session_state["pdfs"][pdf_id] = {
+        DocumentIngestion.session_state["pdfs"][pdf_id] = {
             "name": file_upload.name,
             "vector_db": vector_db,
             "pages": pdf_pages,
@@ -53,7 +52,7 @@ class DocumentProcessor:
             "doc_count": len(vector_db.get()['documents']),
             "is_sample": is_sample
         }
-        DocumentProcessor.session_state["active_pdfs"].insert(0, pdf_id)
+        DocumentIngestion.session_state["active_pdfs"].insert(0, pdf_id)
         logger.info(f"PDF stored in session state with {len(vector_db.get()['documents'])} chunks")
 
 
@@ -81,7 +80,7 @@ class DocumentProcessor:
     def delete_pdf(pdf_id: str):
         """Delete single PDF and its collection."""
 
-        if pdf_id in DocumentProcessor.session_state["pdfs"]:
+        if pdf_id in DocumentIngestion.session_state["pdfs"]:
             pdf_data = st.session_state["pdfs"][pdf_id]
             logger.info(f"Deleting PDF: {pdf_data['name']} (ID: {pdf_id})")
             try:
@@ -90,11 +89,11 @@ class DocumentProcessor:
                 pdf_data["vector_db"].delete_collection()
                 logger.info(f"Deleted collection: {pdf_data['collection_name']} - {collection_id}")
             except Exception as e:
-                logger.error(f"Error deleting collection: {e} - {collection_id}")
+                logger.error(f"Error deleting collection: {e}")
 
             # Remove from state
-            del DocumentProcessor.session_state["pdfs"][pdf_id]
-            DocumentProcessor.session_state["active_pdfs"].remove(pdf_id)
+            del DocumentIngestion.session_state["pdfs"][pdf_id]
+            DocumentIngestion.session_state["active_pdfs"].remove(pdf_id)
 
             st.success(f"Deleted {pdf_data['name']}")
 
@@ -103,8 +102,8 @@ class DocumentProcessor:
         """Delete all PDFs."""
         
         logger.info("Deleting all PDFs")
-        for pdf_id in list(DocumentProcessor.session_state["pdfs"].keys()):
-            DocumentProcessor.delete_pdf(pdf_id)
-        DocumentProcessor.session_state["pdfs"] = {}
-        DocumentProcessor.session_state["active_pdfs"] = []
+        for pdf_id in list(DocumentIngestion.session_state["pdfs"].keys()):
+            DocumentIngestion.delete_pdf(pdf_id)
+        DocumentIngestion.session_state["pdfs"] = {}
+        DocumentIngestion.session_state["active_pdfs"] = []
 
