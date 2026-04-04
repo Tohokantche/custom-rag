@@ -12,7 +12,7 @@ import ollama
 from pathlib import Path
 from langchain_core.messages import  AIMessage, SystemMessage
 from src.utils import render_config, extract_model_names, generate_pdf_id, LoadReRanker, DownloadModels
-from src.documents import DocumentProcessor
+from src.documents import DocumentIngestion
 from src.embeddings import PERSIST_DIRECTORY
 from src.rag import RagLogic
 
@@ -52,7 +52,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-
 def main() -> None:
     """
     Main function to run the Streamlit application.
@@ -83,8 +82,10 @@ def main() -> None:
         st.session_state["re_ranker"] = None
     if "uploader_key" not in st.session_state:
         st.session_state["uploader_key"] = 0
-    if "model_name" not in st.session_state:
-        st.session_state["model_name"] = []
+    if "gen_model_name" not in st.session_state:
+        st.session_state["gen_model_name"] = []
+    if "emb_model_name" not in st.session_state:
+        st.session_state["emb_model_name"] = []
 
     def clear_file():
         # Increment key to reset the drag and drop file widget
@@ -92,24 +93,32 @@ def main() -> None:
 
     # Get available ollama models
     try:
-        if not st.session_state["model_name"]:
-            models_info = ollama.list()
-            st.session_state["model_name"] = extract_model_names(models_info)
-            #st.session_state["model_name"] = st.session_state["model_name"]
+        if not st.session_state["gen_model_name"]:
+            with st.status("Loading and identifying models type ..."):
+                models_info = ollama.list()
+                model_names_dict = extract_model_names(models_info)
+                st.session_state["gen_model_name"] = model_names_dict['gen_models']
+                st.session_state["emb_model_name"] = model_names_dict['emb_models']
+                st.rerun()
     except Exception as e:
-        st.error(e, icon="⛔️")
         logger.error(f"Please make sure that ollama is installed on your system: {e}")
+        st.error(e, icon="⛔️")
+        return
 
     download_attempt = 0
     model_threads = None
 
-    # Default : Embedding model, chat model, router model, re-ranking model. Feel free do download your own.
+    # Default models: Embedding model, chat model, router model, re-ranking model. Feel free do download your own.
     model_names =["nomic-embed-text:latest", "qwen3:1.7b", "lfm2.5-thinking:1.2b", "zeroentropy/zerank-1-small"]
-
     # In the case the user failed to manually download the models we did it for him/her
-    while (len(st.session_state["model_name"]) <3) and (download_attempt < 2) :
+    while ((len(st.session_state["gen_model_name"]) + 
+            len(st.session_state["gen_model_name"])) <3) and \
+                len(st.session_state["gen_model_name"]) and \
+                len(st.session_state["emb_model_name"]) and \
+                    (download_attempt < 2) :
         with st.status("Downloading embeddings and chat models ..."):
-            model_threads = [DownloadModels(model_name) for model_name in model_names[:-1]].append(LoadReRanker(model_names[-1]))
+            model_threads = [DownloadModels(model_name) for model_name in model_names[:-1]]
+            model_threads.append(LoadReRanker(model_names[-1]))
             for thread in model_threads:
                 thread.start()
             for thread in model_threads:
@@ -117,29 +126,32 @@ def main() -> None:
             for i, thread in enumerate(model_threads):
                 if thread.return_value:
                     logger.info(f"Sucessfully download models: {thread.model_name}")
-                
-            st.session_state["model_name"] = extract_model_names(models_info) 
+            model_names_dict = extract_model_names(models_info)
+            st.session_state["gen_model_name"] = model_names_dict['gen_models']
+            st.session_state["emb_model_name"] = model_names_dict['emb_models']
             download_attempt +=1
 
-    # Create layout
+    # Create streamlit layout
     col1, col2 = st.columns([1, 1])
 
-    doc_processor = DocumentProcessor(st.session_state)
-    
+    doc_processor = DocumentIngestion(st.session_state)
+
     # Model selection
-    if st.session_state["model_name"]:
-        selected_model = col2.selectbox(
+    if st.session_state["gen_model_name"]:
+        selected_gen_model = col2.selectbox(
             "Pick a model available locally on your system ↓",
-            st.session_state["model_name"],
+            st.session_state["gen_model_name"],
             key="model_select"
         )
         # Initialise RagLogic with selected model
-        rag_logic = RagLogic(selected_model)
-
+        rag_logic = RagLogic(selected_gen_model)
+        
     # PDF Management UI in Sidebar
     with st.sidebar:
         st.divider()
-        selection = render_config()
+        selection = render_config(st.session_state["emb_model_name"])
+        # setting embedding models with selected name
+        DocumentIngestion.emb_store.emb_model_name = selection['selected_emb_model']
         if selection:
             os.environ["chunk_size"]= selection["chunk_size"]
             os.environ["chunk_overlap"]= selection["chunk_overlap"]
