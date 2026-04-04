@@ -1,67 +1,19 @@
 import logging
-from typing import Tuple, Any, Union, List
+from typing import Tuple, Any, Union, List, Dict
 from threading import Thread
 import streamlit as st
 import numbers
 import subprocess
 import torch
+import ollama
 from sentence_transformers import CrossEncoder
 
 logger = logging.getLogger(__name__)
 
-
-class LoadModelsThread(Thread):
-    def __init__(self, client, model_name):
-        super().__init__()
-        self.client = client
-        self.model_name = model_name
-        self.return_value = None
-    
-    def is_vector_numeric(self, vector):
-        for item in vector:
-            if not isinstance(item, numbers.Number):
-                return False
-        return True
-    
-    def use_generation_model(self, prompt="Why is the sky blue?"):
-        logger.info(f"Using generation model: {self.model_name}")
-        try:
-            response = self.client.generate(model=self.model_name, prompt=prompt, stream=False)
-            return response['response']
-        except Exception as e:
-            # A generation-only model will likely fail if forced into an embedding call,
-            # but a general LLM can produce embeddings through the 'embed' function
-            # (though typically less specialized than dedicated embedding models)
-            logger.error(f"Error generating text with {self.model_name}: {e}")
-            return None
-
-    # --- Embedding Model ---
-    def use_embedding_model(self, input_text="The quick brown fox jumps over the lazy dog."):
-        logger.info(f"Using embedding model: {self.model_name}")
-        try:
-            # The 'embed' function is designed for generating vector embeddings
-            embeddings = self.client.embed(model=self.model_name, input=input_text)
-            # The result is a list of floating point numbers
-            return embeddings['embeddings'][0]
-        except Exception as e:
-            logger.info(f"Error generating embeddings with {self.model_name}: {e}")
-            return None
-    
-    def run(self):
-        # Spearate generation models from embeddings ones by testing their output
-        emb_models = False
-        gen_data = self.use_generation_model()
-        embedding = self.use_embedding_model()
-        if embedding and self.is_vector_numeric(embedding):
-            emb_models = True
-        elif gen_data and not self.is_vector_numeric(gen_data):
-            emb_models = False
-        elif self.is_vector_numeric(gen_data):
-            emb_models = True
-        self.return_value = emb_models
-
-
 class DownloadModels(Thread):
+    """
+    
+    """
     def __init__(self, model_name):
         super().__init__()
         self.model_name = model_name
@@ -101,6 +53,7 @@ class DownloadModels(Thread):
 
 
 class LoadReRanker(Thread):
+
     def __init__(self, model_name):
         super().__init__()
         self.model_name = model_name
@@ -125,80 +78,156 @@ class LoadReRanker(Thread):
                 return scored_documents 
             return None
 
-
-def render_config():
-    """Render and handle chunck configuration.
+class LoadModelsThread(Thread):
+    def __init__(self, client, model_name):
+        super().__init__()
+        self.client = client
+        self.model_name = model_name
+        self.return_value = None
     
-    The sidebar allows users to:
-    1. Choose chunk size value
-    2. Choose chunk overlap value
-   
-    Returns:
-        dict: Contains chunk configuration
-    """
+    def is_vector_numeric(self, vector):
+        for item in vector:
+            if not isinstance(item, numbers.Number):
+                return False
+        return True
     
-    #with st.sidebar:
-    st.markdown("### ⚙️ Configuration")
-    with st.expander("🧱 Retrieval Settings", expanded=True):
-        chunk_size = st.number_input("Enter chunk size:", value=1500, min_value=256, max_value=10000, step=2, 
-                                        format="%i", help="Specify data chunk size")
-        chunk_overlap = st.number_input("Enter chunk overlap:", value=80, min_value=10, max_value=200, 
-                                            step=2, format="%i", help="Specify data chunk overlap")
-        st.divider()
-        h_search = st.checkbox("Use hybrid search", value = True, help="Combine semantic (default) with keyword search")
-        re_ranker = st.checkbox("Use re-ranker", help="Re-rank the retrieved documents for highly accurate responses")
-        if re_ranker:
-            st.warning('This might really slow down your RAG response time, as this demo run on free tier CPU cloud \
-                        with limited ressources!', icon="⚠️")
-    return {"chunk_size": str(chunk_size), "chunk_overlap": str(chunk_overlap), "re_ranker": re_ranker, "h_search": h_search}
+    def use_generation_model(self, prompt="Hello !"):
+        logger.info(f"Using model: {self.model_name}")
+        try:
+            response = self.client.generate(model=self.model_name, prompt=prompt, stream=False)
+            return response['response']
+        except Exception as e:
+            # A generation-only model will likely fail if forced into an embedding call,
+            # but a general LLM can produce embeddings through the 'embed' function
+            # (though typically less specialized than dedicated embedding models)
+            logger.error(f"Error generating text with {self.model_name}: {e}")
+            return None
+
+    # --- Embedding Model ---
+    def use_embedding_model(self, input_text="Why is the sky blue ?"):
+        logger.info(f"Using embedding model: {self.model_name}")
+        try:
+            # The 'embed' function is designed for generating vector embeddings
+            embeddings = self.client.embed(model=self.model_name, input=input_text)
+            # The result is a list of floating point numbers
+            return embeddings['embeddings'][0]
+        except Exception as e:
+            logger.info(f"Error generating embeddings with {self.model_name}: {e}")
+            return None
+    
+    def run(self):
+        # Spearate generation models from embeddings ones by testing their output
+        emb_models = False
+        gen_data = self.use_generation_model()
+        embedding = self.use_embedding_model()
+        if embedding and self.is_vector_numeric(embedding):
+            emb_models = True
+        elif gen_data and not self.is_vector_numeric(gen_data):
+            emb_models = False
+        elif self.is_vector_numeric(gen_data):
+            emb_models = True
+        self.return_value = emb_models
 
 
-def generate_pdf_id(file_upload) -> str:
-    """Generate unique ID for PDF."""
-    #timestamp = datetime.now().isoformat()
-    return f"pdf_{abs(hash(file_upload.name))}" 
-
-
-def extract_model_names(models_info: Any) -> Tuple[str, ...]:
+def extract_model_names(models_info: Any) -> Dict[str,Tuple[str, ...]]:
     """
-    Extract model names from the provided models information.
-
-    Args:
-        models_info: Response from ollama.list()
-
-    Returns:
-        Tuple[str, ...]: A tuple of model names.
+    Extract model names from the provided models information 
+    and identifying model type.
+    return a dictionnary of embedded and generative model names.
     """
+
     logger.info("Extracting model names from models_info")
     # Initialise list for generation and embeddings models
     gen_models = []
     emb_models = []
     try:
-        # The new response format returns a list of Model objects
         if hasattr(models_info, "models"):
             # Extract model names from the Model objects
             model_names = tuple(model.model for model in models_info.models)
-            # SEperate Gen Models from Embeddings ones
-            # model_threads = [LoadModelsThread(ollama.Client(), model_name) for model_name in model_names]
-            # for thread in model_threads:
-            #     thread.start()
-            # for thread in model_threads:
-            #     thread.join()
-            # for i, thread in enumerate(model_threads):
-            #     if thread.return_value:
-            #         emb_models.append(thread.model_name)
-            #     else:
-            #         gen_models.append(thread.model_name)
-
-            # logger.info(f"Embedding models --- {emb_models}")
-            # logger.info(f"Generation models --- {gen_models}")
-        else:
-            # Fallback for any other format
-            model_names = tuple()
             
-        logger.info(f"Extracted model names: {model_names}")
+            # Seperate Gen Models from Embeddings ones
+            model_threads = [LoadModelsThread(ollama.Client(), model_name) for model_name in model_names]
+            logger.info("Identifying extracted models type: embedding or generative")
+            for thread in model_threads:
+                thread.start()
+            for thread in model_threads:
+                thread.join()
+            for thread in model_threads:
+                if thread.return_value:
+                    emb_models.append(thread.model_name)
+                else:
+                    gen_models.append(thread.model_name)
+
+            logger.info(f"Embedding models names --- {emb_models}")
+            logger.info(f"Generation models names --- {gen_models}")
+            
+        logger.info(f"All extracted model names: {model_names}")
         # return model_names
-        return tuple(model_names)
+        return {'emb_models': tuple(emb_models) , 'gen_models': tuple(gen_models)}
     except Exception as e:
         logger.error(f"Error extracting model names: {e}")
-        return tuple()
+        return {'emb_models': tuple(emb_models) , 'gen_models': tuple(gen_models)}
+    
+def render_config(emb_models_name : List[str]):
+    """
+    Render and handle chunck configuration.
+        The sidebar allows users to:
+        1. Choose chunk size value
+        2. Choose chunk overlap value
+    Returns:
+        dict: Contains chunk configuration
+    """
+    
+    st.markdown("### ⚙️ Configuration")
+    with st.expander("🧱 Retrieval Settings", expanded=True):
+        
+        selected_emb_model = st.selectbox(
+            "Pick an embedding model:",
+            emb_models_name,
+            key="emb_model_select"
+        )
+        chunk_size = st.number_input(
+            "Enter chunk size:", 
+            value=1500, 
+            min_value=256, 
+            max_value=10000, 
+            step=2, 
+            format="%i", 
+            help="Specify data chunk size"
+            )
+        chunk_overlap = st.number_input(
+            "Enter chunk overlap:", 
+            value=80, 
+            min_value=10, 
+            max_value=200, 
+            step=2, 
+            format="%i", 
+            help="Specify data chunk overlap"
+            )
+        st.divider()
+        h_search = st.checkbox(
+            "Use hybrid search", 
+            value = True,
+            help="Combine semantic (default) with keyword search"
+            )
+        re_ranker = st.checkbox(
+            "Use re-ranker",
+            help="Re-rank the retrieved documents for highly accurate responses"
+            )
+        if re_ranker:
+            st.warning('This might really slow down your RAG response time, as this demo run on free tier CPU cloud \
+                        with limited ressources!', icon="⚠️")
+    return {"selected_emb_model": selected_emb_model,
+            "chunk_size": str(chunk_size),
+            "chunk_overlap": str(chunk_overlap),
+            "re_ranker": re_ranker,
+            "h_search": h_search}
+
+
+def generate_pdf_id(file_upload) -> str:
+    """
+    Generate unique ID for  a given PDF file.
+    """
+    return f"pdf_{abs(hash(file_upload.name))}" 
+
+
