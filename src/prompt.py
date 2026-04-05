@@ -5,23 +5,23 @@ class PromptManager(BaseModel):
         Prompt template used across the application
     """
 
-    ROUTER_SYSTEM_PROMPT : str = " You are a user intent detector. Your role is to accurately " \
+    ROUTER_SYSTEM_PROMPT : str = " You are a user intent detector. Your task is to accurately " \
                     "classify the user intent without hallucinating."
     
     ROUTER_PROMPT_TEMPLATE : str =  """
             Accurately classify the query into exactly one category: 
-            'retrieval', 'casual', toxic, or 'unsure'. You must use previous interactions as a guidance to classify the query.
+            'retrieval', 'casual', toxic, or 'unsure'. Use previous interactions as a guidance to classify the query.
 
             - 'retrieval': explicit request for external concepts/facts/data that requires specific document access
             - 'casual':  casual or small talk/greetings, or personal conversation
-            - 'toxic':  hate speech/explicit, or insult/disrespectful statement/malicious intention
+            - 'toxic':  hate speech, or insult/disrespectful statement, or malicious intention
             - 'unsure':  small talk that are ambiguous, or unclear, or vague
                                                                                                                
             Query: {question}
             Category: """
     
     ROUTER_RETRIEVAL_PROMPT_TEMPLATE :str = """Answer the question based ONLY on the following context from one or multiple documents.
-                Please only provide HIGHLY relevant information and do not hallucinate.
+                Please only provide HIGHLY relevant information and do not hallucinate, or make up content.
                 Each section is marked with its source document. And, each document start with its source name: 'Source:'.  
 
                 Use chain-of-thought reasoning:
