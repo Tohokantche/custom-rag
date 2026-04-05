@@ -10,11 +10,20 @@ import logging
 import os, sys
 import ollama
 from pathlib import Path
-from langchain_core.messages import  AIMessage, SystemMessage
-from src.utils import render_config, extract_model_names, generate_pdf_id, LoadReRanker, DownloadModels
 from src.documents import DocumentIngestion
 from src.embeddings import PERSIST_DIRECTORY
 from src.rag import RagLogic
+from langchain_core.messages import (
+    AIMessage, 
+    SystemMessage,
+    )  
+from src.utils import (
+    render_config, 
+    extract_model_names, 
+    generate_pdf_id, 
+    LoadReRanker, 
+    DownloadModels,
+    ) 
 
 # Suppress torch warning
 import warnings
@@ -54,8 +63,9 @@ logging.basicConfig(
 
 def main() -> None:
     """
-    Main function to run the Streamlit application.
+    Main function to run the Streamlit application. This method handles the UI its logic
     """
+
     st.subheader("🧠 Plug-and-play Ollama RAG", divider="gray", anchor=False)
     st.set_page_config(initial_sidebar_state="collapsed")
 
@@ -123,7 +133,7 @@ def main() -> None:
                 thread.start()
             for thread in model_threads:
                 thread.join()
-            for i, thread in enumerate(model_threads):
+            for thread in model_threads:
                 if thread.return_value:
                     logger.info(f"Sucessfully download models: {thread.model_name}")
             model_names_dict = extract_model_names(models_info)
@@ -150,7 +160,7 @@ def main() -> None:
     with st.sidebar:
         st.divider()
         selection = render_config(st.session_state["emb_model_name"])
-        # setting embedding models with selected name
+        # Setting embedding models with selected name
         DocumentIngestion.emb_store.emb_model_name = selection['selected_emb_model']
         if selection:
             os.environ["chunk_size"]= selection["chunk_size"]
@@ -310,7 +320,7 @@ def main() -> None:
 
         # Display chat history
         for message in st.session_state["messages"]:
-            avatar = "🤖" if message["role"] == "assistant" else "😎"
+            avatar = "💬" if message["role"] == "assistant" else "😎"
             with message_container.chat_message(message["role"], avatar=avatar):
                 st.markdown(message["content"])
 
@@ -345,7 +355,7 @@ def main() -> None:
                 st.markdown(prompt)
 
             # Process and display assistant response
-            with message_container.chat_message("assistant", avatar="🤖"):
+            with message_container.chat_message("assistant", avatar="💬"):
                 if st.session_state.get("pdfs"):
                     with st.spinner(":green[processing...]"):
                         try:
@@ -402,7 +412,6 @@ def main() -> None:
         else:
             if not st.session_state.get("pdfs"):
                 st.warning("Upload PDF files or use the sample PDF to begin chat ...")
-
 
 if __name__ == "__main__":
     main()
