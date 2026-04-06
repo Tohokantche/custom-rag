@@ -31,22 +31,28 @@ class RagLogic:
     prompt_manager : PromptManager = PromptManager()
 
     def __init__(self, selected_model: str, router_model:str="lfm2.5-thinking:1.2b"):
-    
+        
+        logger.info(f"Using {selected_model} for chat model")
+        logger.info(f"Using {router_model} for router model")
         self.chat_model = ChatOllama(
             model=selected_model, 
             temperature=0.6, 
             top_p=0.95, 
-            top_k=20, 
-            num_ctx=8192,
-            keep_alive="1h"
+            top_k=20
             )
+        
+        self.retriever_model = ChatOllama(
+            model=selected_model, 
+            temperature=0.6, 
+            top_p=0.95, 
+            top_k=20
+            )
+        
         try :
             self.router_model = ChatOllama(
                 model=router_model, 
                 temperature=0.1, 
                 top_k=12, 
-                num_ctx=4096,
-                keep_alive="2h"
                 )
         except Exception as e:
             logger.error(f"Unable to load the router model {router_model}: {e}")
@@ -85,7 +91,7 @@ class RagLogic:
         # Setup Multi querry retriever
         retriever = MultiQueryRetriever.from_llm(
             vector_db.as_retriever(search_kwargs={"k": 3}),
-            self.chat_model,
+            self.retriever_model,
             prompt=QUERY_PROMPT
         )
         try:
@@ -204,6 +210,10 @@ class RagLogic:
         self.prune_chat_context = copy.deepcopy(
             chat_context if len(chat_context) < 7 else chat_context[-6:]
             )
+        if len(chat_context) != len(self.prune_chat_context):
+            self.prune_chat_context.insert(0,
+                        SystemMessage(content="You are a helpful assistant.")
+                )
         formatted_context, all_retrieved_docs = None, None
 
         logger.info(f"Classifying the user query: {question}")
@@ -213,7 +223,7 @@ class RagLogic:
         
         # By default classify users' queries as casual
         router_response = "casual"
-        prune_router_context = chat_context if len(chat_context) < 4 else chat_context[-3:]
+        prune_router_context = chat_context if len(chat_context) < 5 else chat_context[-4:]
         # Only route queries with more than 12 characters to prevent unecessary computation
         if not (len(question) < 12):
 
@@ -234,12 +244,15 @@ class RagLogic:
             # RAG prompt with source awareness
             router_category_template = RagLogic.prompt_manager.ROUTER_RETRIEVAL_PROMPT_TEMPLATE
             logger.info("Generating response with source attribution")
+
         elif "casual" in router_response:
             logger.info(f"'{question}' is clasified as a casual query.")
             router_category_template = RagLogic.prompt_manager.ROUTER_CASUAL_PROMPT_TEMPLATE
+
         elif "toxic" in router_response:
             logger.info(f"'{question}' is clasified as a toxic/malicious query.")
             router_category_template = RagLogic.prompt_manager.ROUTER_TOXIC_PROMPT_TEMPLATE
+
         else:
             logger.info(f"'{question}' is clasified as unsure query intent.")
             router_category_template = RagLogic.prompt_manager.ROUTER_UNSURE_PROMPT_TEMPLATE
@@ -253,6 +266,7 @@ class RagLogic:
             | decision_chain
             | StrOutputParser()
             )
+        
         # Returning the assistance response
         response = ""
         for chunk in response_chain.stream({"question": question}):
