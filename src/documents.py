@@ -10,7 +10,6 @@ from src.embeddings import EmbeddingsStore
 PERSIST_DIRECTORY = os.path.join("data", "vectors")
 logger = logging.getLogger(__name__)
 
-
 class DocumentIngestion:
     
     session_state = None
