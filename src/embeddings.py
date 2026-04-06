@@ -8,7 +8,6 @@ import streamlit as st
 from unstructured.cleaners.core import clean, group_broken_paragraphs
 import os, re
 
-
 # Paddle OCR for ingestion
 # os.environ["OCR_AGENT"] = "unstructured.partition.utils.ocr_models.paddle_ocr.OCRAgentPaddle"
 
