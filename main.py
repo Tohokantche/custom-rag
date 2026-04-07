@@ -11,9 +11,9 @@ import logging, sys, os
 # Suppress torch warning
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning)
-
 logger = logging.getLogger(__name__)
 
+# Logging configuration
 logging.basicConfig(
     level=logging.INFO,
     # {%(pathname)s:%(lineno)d}
@@ -25,16 +25,10 @@ logging.basicConfig(
     ],
     force=True 
 )
-# Logging configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 
 def main() -> None:
     """
-    Main function to run the Streamlit application. This method handles the UI and its logic
+    Main function to run the Streamlit application. This method is the entry-point to the UI and its logic
     """
     
     load_chat_ui()
