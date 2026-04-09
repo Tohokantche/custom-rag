@@ -1,5 +1,5 @@
 # Plug-and-Play Ollama RAG
-A simple and effective RAG pipeline that can be run and customised locally for ZERO dollar.
+A generic and effective RAG pipeline that can be run and customised locally for ZERO (0) dollar. 
 
 ## Screenshots
 ![Ollama RAG ](screenshot.png "")
