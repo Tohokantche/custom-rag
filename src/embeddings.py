@@ -25,7 +25,7 @@ class EmbeddingsStore:
         EmbeddingsStore.session_state = session_state
 
     @staticmethod
-    def create_vector_db(file_upload, pdf_id: str) -> Chroma:
+    def create_vector_db(file_upload, path, pdf_id: str) -> Chroma:
         """
         Create a vector database from an uploaded PDF file.
 
@@ -37,15 +37,17 @@ class EmbeddingsStore:
         """
         logger.info(f"Creating vector DB from file upload: {file_upload.name}")
 
-        # Create temp directory
-        temp_dir = os.path.join("data","pdfs")
-        if not os.path.exists(temp_dir):
-            os.makedirs(os.path.join("data","pdfs"))
-        path = os.path.join(temp_dir, file_upload.name)
-        
-        with open(path, "wb") as f:
-            f.write(file_upload.getvalue())
-            logger.info(f"File saved to temporary path: {path}")
+        if not path :
+            # Create temp directory
+            temp_dir = os.path.join("data","pdfs")
+            if not os.path.exists(temp_dir):
+                os.makedirs(os.path.join("data","pdfs"))
+            path = os.path.join(temp_dir, file_upload.name)
+            
+        if not os.path.exists(path):
+            with open(path, "wb") as f:
+                f.write(file_upload.getvalue())
+                logger.info(f"File saved to temporary path: {path}")
 
         # Load, clean and create chunk
         loader = UnstructuredPDFLoader(
