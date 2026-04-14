@@ -6,6 +6,8 @@ import pdfplumber
 from typing import List, Any
 import streamlit as st
 from src.embeddings import EmbeddingsStore
+from src.query_router import QueryRouter
+from concurrent.futures import ThreadPoolExecutor
 
 PERSIST_DIRECTORY = os.path.join("data", "vectors")
 logger = logging.getLogger(__name__)
@@ -14,6 +16,8 @@ class DocumentIngestion:
     
     session_state = None
     emb_store = None
+    query_router : QueryRouter = QueryRouter()
+    # Create docuemts keywords here and store it
 
     def __init__(self, session_state, emb_model_name = "nomic-embed-text"):
 
@@ -26,14 +30,34 @@ class DocumentIngestion:
         """Process single PDF and store in session state."""
        
         logger.info(f"Processing PDF: {file_upload.name} with ID: {pdf_id}")
+        
         # Create temp directory
         temp_dir = os.path.join("data","pdfs")
         if not os.path.exists(temp_dir):
             os.makedirs(os.path.join("data","pdfs"))
         path = os.path.join(temp_dir, file_upload.name)
 
-        ### Create data store
-        vector_db = DocumentIngestion.emb_store.create_vector_db(file_upload, pdf_id)
+        # Save file in the temp directory
+        with open(path, "wb") as f:
+            f.write(file_upload.getvalue())
+            logger.info(f"File saved to temporary path: {path}")
+
+        vector_db = None
+        with ThreadPoolExecutor() as executor:
+            # Alert the query router on the presence of a new document
+            if DocumentIngestion.query_router:
+                future1 = executor.submit(
+                    DocumentIngestion.query_router.ingest_document,
+                    path,
+                    )
+            # Create a vector store from the documen
+            if DocumentIngestion.emb_store:
+                future2 = executor.submit(
+                    DocumentIngestion.emb_store.create_vector_db, 
+                    file_upload, 
+                    path, pdf_id,
+                    )
+            vector_db = future2.result()
 
         # Extract PDF pages
         with pdfplumber.open(file_upload if not is_sample else path) as pdf:
@@ -43,16 +67,18 @@ class DocumentIngestion:
         # Store in session state
         DocumentIngestion.session_state["pdfs"][pdf_id] = {
             "name": file_upload.name,
+            "path": path,
             "vector_db": vector_db,
             "pages": pdf_pages,
             "file_upload": file_upload,
             "collection_name": vector_db._collection.name,
             "upload_timestamp": datetime.now(),
-            "doc_count": len(vector_db.get()['documents']),
+            "doc_count": len(vector_db.get()['documents']) if vector_db else None,
             "is_sample": is_sample
         }
         DocumentIngestion.session_state["active_pdfs"].insert(0, pdf_id)
-        logger.info(f"PDF stored in session state with {len(vector_db.get()['documents'])} chunks")
+        if vector_db:
+            logger.info(f"PDF stored in session state with {len(vector_db.get()['documents'])} chunks")
 
 
     @staticmethod
@@ -87,6 +113,10 @@ class DocumentIngestion:
                 # Delete vector collection
                 pdf_data["vector_db"].delete_collection()
                 logger.info(f"Deleted collection: {pdf_data['collection_name']} - {collection_id}")
+                if DocumentIngestion.query_router:
+                    DocumentIngestion.query_router.remove_document(pdf_data["path"])
+                    logger.info(f"Removed document: {pdf_data['path']} from the query router database")
+                
             except Exception as e:
                 logger.error(f"Error deleting collection: {e}")
 
