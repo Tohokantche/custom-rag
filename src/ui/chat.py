@@ -97,12 +97,12 @@ def load_chat_ui() -> None:
     download_attempt = 0
     model_threads = None
 
-    # Default models: Embedding model, chat model, router model, re-ranking model. Feel free do download your own.
-    model_names =["nomic-embed-text:latest", "qwen3:1.7b", "lfm2.5-thinking:1.2b", "zeroentropy/zerank-1-small"]
+    # Default models: Embedding model, chat model, re-ranking model. Feel free do download your own.
+    model_names =["nomic-embed-text:latest", "qwen3:1.7b", "zeroentropy/zerank-1-small"]
     
     # In the case the user failed to manually download the models we did it for him/her
-    while ((len(st.session_state["gen_model_name"]) + 
-            len(st.session_state["gen_model_name"])) <3) and \
+    while ((len(st.session_state["emb_model_name"]) + 
+            len(st.session_state["gen_model_name"])) < 2) and \
                 len(st.session_state["gen_model_name"]) and \
                 len(st.session_state["emb_model_name"]) and \
                     (download_attempt < 2) :
