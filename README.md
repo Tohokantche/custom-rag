@@ -1,5 +1,5 @@
 # Plug-and-Play Ollama RAG
-A generic and effective RAG pipeline that can be run and customised locally for ZERO (0) dollar. 
+A generic, raw and effective RAG pipeline that can be run and customised locally for ZERO (0) dollar. 
 
 ## Screenshots
 ![Ollama RAG ](screenshot.png "")
@@ -25,7 +25,7 @@ A generic and effective RAG pipeline that can be run and customised locally for 
      ```bash
      ollama pull qwen3.5  # serving as a chat model, feel free to change it to your preferred ones (i.e., I recommend models with smaller hallucination rate for better RAG performance)
      ollama pull nomic-embed-text  # serving as embedding model with 2K context
-     ollama pull lfm2.5-thinking:1.2b  # serving as guardrails to adequately route the user queries 
+     ollama pull smollm:360m  # serving as guardrails to adequately route the user queries 
      ```
 
 2. **Clone Repository**
