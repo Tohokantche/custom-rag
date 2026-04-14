@@ -22,8 +22,7 @@ logging.basicConfig(
     handlers=[
         logging.FileHandler(os.path.join("logs", "app.log"), mode='w'), 
         logging.StreamHandler(sys.stdout)         
-    ],
-    force=True 
+    ], 
 )
 
 def main() -> None:
