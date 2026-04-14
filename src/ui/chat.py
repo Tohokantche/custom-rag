@@ -69,13 +69,18 @@ def load_chat_ui() -> None:
         st.session_state["emb_model_name"] = []
     if "rag_logic" not in st.session_state:
         st.session_state["rag_logic"] = None
+    if "selected_gen_model" not in st.session_state:
+        st.session_state["selected_gen_model"] = None
+    if "selected_router_model" not in st.session_state:
+        st.session_state["selected_router_model"] = None
+
 
     def clear_file():
         # Increment key to reset the drag and drop file widget
         st.session_state.uploader_key += 1
-
-    # Automatically get available ollama models
+    
     try:
+        # Automatically get available ollama models
         if not st.session_state["gen_model_name"]:
             with st.status("Loading and identifying models type ..."):
                 models_info = ollama.list()
@@ -118,40 +123,55 @@ def load_chat_ui() -> None:
 
     # Create streamlit layout
     col1, col2 = st.columns([1, 1])
-
     doc_processor = DocumentIngestion(st.session_state)
 
-    # Model selection
+    # Model selection and RagLogic instantiation
     if st.session_state["gen_model_name"]:
         selected_gen_model = col2.selectbox(
             "Pick a model available locally on your system ↓",
             st.session_state["gen_model_name"],
-            key="model_select"
+            key="chat_model_selected", 
         )
-        if selected_gen_model:
+        if not st.session_state["rag_logic"] and (selected_gen_model != st.session_state["selected_gen_model"]):
             st.session_state["rag_logic"] =  RagLogic(selected_gen_model)
+            st.session_state["selected_gen_model"] = selected_gen_model
         
+        if st.session_state["rag_logic"] and (selected_gen_model != st.session_state["selected_gen_model"]):
+            st.session_state["rag_logic"].set_chat_model(selected_gen_model)
+            st.session_state["selected_gen_model"] = selected_gen_model
+
+
     # PDF Management UI in Sidebar
     with st.sidebar:
         st.divider()
-        selection = render_config(st.session_state["emb_model_name"])
+        selection = render_config(
+            st.session_state["emb_model_name"],
+            st.session_state["gen_model_name"],)
+        
+        if st.session_state["rag_logic"] and (selection['selected_router_model'] != st.session_state["selected_router_model"]):
+            st.session_state["rag_logic"].set_router_model(selection['selected_router_model'])
+            st.session_state["selected_router_model"] = selection['selected_router_model']
+       
         # Setting embedding models with selected name
         DocumentIngestion.emb_store.emb_model_name = selection['selected_emb_model']
+
         if selection:
             os.environ["chunk_size"]= selection["chunk_size"]
             os.environ["chunk_overlap"]= selection["chunk_overlap"]
             if selection["re_ranker"]:
                 st.session_state["use_re_ranker"] = True
-                with st.spinner("Loading re-ranker model ..."):
-                    if model_threads:
-                        st.session_state["re_ranker"] = \
-                            model_threads[-1].return_value if model_threads[-1].return_value else None
-                    if not st.session_state["re_ranker"]:
-                        load_re_ranker =LoadReRanker(model_names[-1])
-                        load_re_ranker.start()
-                        load_re_ranker.join()
-                        st.session_state["re_ranker"] = load_re_ranker.return_value
-                    logger.info(f"Sucessfully load the re-ranker model!")
+                if not st.session_state["re_ranker"]: 
+                    logger.info(f"Loading the re-ranker model...")
+                    with st.spinner("Loading re-ranker model ..."):
+                        if model_threads:
+                            st.session_state["re_ranker"] = \
+                                model_threads[-1].return_value if model_threads[-1].return_value else None
+                        if not st.session_state["re_ranker"]:
+                            load_re_ranker =LoadReRanker(model_names[-1])
+                            load_re_ranker.start()
+                            load_re_ranker.join()
+                            st.session_state["re_ranker"] = load_re_ranker.return_value
+                        logger.info(f"Sucessfully load the re-ranker model!")
 
         st.divider()
         st.subheader("📚 Loaded PDFs")
@@ -194,7 +214,8 @@ def load_chat_ui() -> None:
     # Clear vector DB if switching between sample and upload
     if use_sample != st.session_state.get("use_sample"):
         if st.session_state["vector_db"] is not None:
-            st.session_state["vector_db"].delete_collection()
+            if doc_processor:
+                doc_processor.delete_all_pdfs()
             st.session_state["vector_db"] = None
             st.session_state["pdf_pages"] = None
         st.session_state["use_sample"] = use_sample
@@ -340,8 +361,8 @@ def load_chat_ui() -> None:
                                         prompt,
                                         st.session_state["pdfs"],
                                         st.session_state["lang_messages"],
-                                        {"re_ranker": st.session_state["re_ranker"] if st.session_state["use_re_ranker"] else None,
-                                        "h_search": selection['h_search'] 
+                                        {"re_ranker": st.session_state["re_ranker"] if selection["re_ranker"] else None,
+                                        "h_search": selection['h_search']
                                         }
                                     )
                                 )
