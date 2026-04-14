@@ -10,7 +10,10 @@ from langchain_community.document_loaders import PyPDFLoader
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from keybert import KeyBERT
+import torch
 from src.prompt import PromptManager
+from src.utils import detect_device
+
 
 PERSIST_DIRECTORY = os.path.join("data", "vectors")
 logger = logging.getLogger(__name__)
@@ -39,6 +42,7 @@ class QueryRouter:
             keep_alive=-1
             ) 
         self.sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.sentence_model.to(detect_device()["device"])
         self._init_tables()
         logger.info("Successfully initialised class and models !")
 
