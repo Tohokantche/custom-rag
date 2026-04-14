@@ -10,7 +10,7 @@ A generic and effective RAG pipeline that can be run locally and customised for 
 - 📄 **Multi-PDF Support** - Upload and query across multiple documents
 - 🧠 **Multi-Query RAG** - Smarter and rich retrieval with source citations
 - 🔍 **Hybrid search RAG** - Semantic search combined with keyword-based search for accurate retrieval
-- 📊 **Re-ranking RAG** - Re-ranking the retrieved documents based on their relevance to the query
+- 📊 **Re-ranking RAG** - Re-ranking (via a CrossEncoder) the retrieved documents based on their relevance to the query
 - 🛡️ **Queries routing and Guardrails** - Automated routing and handling of toxic/malicious requests 
 - 🎯 **Advanced RAG** - LangChain-powered pipeline with ChromaDB 
 - ⚙️ **Advanced configuration** - Based on your data, tune the retrieval hyper-parameters for optimal performance 
@@ -23,9 +23,9 @@ A generic and effective RAG pipeline that can be run locally and customised for 
    - Visit [Ollama's website](https://ollama.com) to download and install
    - Pull required models using your terminal:
      ```bash
-     ollama pull qwen3.5  # serving as a chat model, feel free to change it to your preferred ones (i.e., I recommend models with smaller hallucination rate for better RAG performance)
-     ollama pull nomic-embed-text  # serving as embedding model with 2K context
-     ollama pull qwen3:1.7b  # serving as guardrails and to adequately route the user queries 
+     ollama pull qwen3.5  # download 'qwen3.5' that serves as a chat model, feel free to change it to your preferred ones (i.e., I recommend models with smaller hallucination rate)
+     ollama pull nomic-embed-text  # download 'nomic-embed-text' that serves as an embedding model (with 2K context) to convert your document to a vector
+     ollama pull qwen3:1.7b  # download 'qwen3:1.7b' that serves as guardrail and to adequately route the user query
      ```
 
 2. **Clone Repository**
