@@ -7,6 +7,7 @@ import subprocess
 import torch
 import ollama
 from sentence_transformers import CrossEncoder
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -69,9 +70,9 @@ class LoadReRanker(Thread):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             self.model.to(device)
 
-        def get_ranked_document(self, query_documents: List[Tuple[str, str]] = None, sources : List[str] = None):
+        def get_ranked_document(self, query_documents: List[Tuple[str, str]] = None, sources : List[Dict[str,str]] = None):
             logger.info("Re-ranking retrieved documents")
-            if not query_documents and not sources:
+            if query_documents and sources:
                 scores = self.model.predict(query_documents)
                 logger.info(f"Re-rank retrieved documents score : {scores}")
                 scored_documents = sorted(zip(scores, query_documents, sources), key=lambda x : x[0], reverse= True )
@@ -91,10 +92,11 @@ class LoadModelsThread(Thread):
                 return False
         return True
     
-    def use_generation_model(self, prompt="Hello !"):
-        logger.info(f"Using model: {self.model_name}")
+    def use_generation_model(self, prompt="hello there!"):
+        logger.info(f"Testing model for gen: {self.model_name}")
         try:
             response = self.client.generate(model=self.model_name, prompt=prompt, stream=False)
+            logger.info(f"Testing modelfor gen: {self.model_name} -- response : {response['response']}")
             return response['response']
         except Exception as e:
             # A generation-only model will likely fail if forced into an embedding call,
@@ -105,11 +107,12 @@ class LoadModelsThread(Thread):
 
     # --- Embedding Model ---
     def use_embedding_model(self, input_text="Why is the sky blue ?"):
-        logger.info(f"Using embedding model: {self.model_name}")
+        logger.info(f"Testing model for embedd: {self.model_name}")
         try:
             # The 'embed' function is designed for generating vector embeddings
             embeddings = self.client.embed(model=self.model_name, input=input_text)
             # The result is a list of floating point numbers
+            logger.info(f"Testing for embedd: {self.model_name} -- response : {embeddings['embeddings'][0]}")
             return embeddings['embeddings'][0]
         except Exception as e:
             logger.info(f"Error generating embeddings with {self.model_name}: {e}")
@@ -122,10 +125,8 @@ class LoadModelsThread(Thread):
         embedding = self.use_embedding_model()
         if embedding and self.is_vector_numeric(embedding):
             emb_models = True
-        elif gen_data and not self.is_vector_numeric(gen_data):
+        if gen_data and not self.is_vector_numeric(gen_data):
             emb_models = False
-        elif self.is_vector_numeric(gen_data):
-            emb_models = True
         self.return_value = emb_models
 
 
@@ -168,7 +169,7 @@ def extract_model_names(models_info: Any) -> Dict[str,Tuple[str, ...]]:
         logger.error(f"Error extracting model names: {e}")
         return {'emb_models': tuple(emb_models) , 'gen_models': tuple(gen_models)}
     
-def render_config(emb_models_name : List[str]):
+def render_config(emb_models_name : List[str], router_models_name: List[str]):
     """
     Render and handle chunck configuration.
         The sidebar allows users to:
@@ -181,6 +182,12 @@ def render_config(emb_models_name : List[str]):
     st.markdown("### ⚙️ Configuration")
     with st.expander("🧱 Retrieval Settings", expanded=True):
         
+        selected_router_model = st.selectbox(
+            "Pick a query router model:",
+            router_models_name,
+            key="router_model_select"
+        )
+
         selected_emb_model = st.selectbox(
             "Pick an embedding model:",
             emb_models_name,
@@ -215,9 +222,14 @@ def render_config(emb_models_name : List[str]):
             help="Re-rank the retrieved documents for highly accurate responses"
             )
         if re_ranker:
-            st.warning('This might really slow down your RAG response time, as this demo run on free tier CPU cloud \
+            if not torch.cuda.is_available():
+                st.warning('Using ELO re-ranker! Model response time might be very slow, as this demo run on free tier CPU cloud \
                         with limited ressources!', icon="⚠️")
+            else:
+                st.warning('Using ELO re-ranker! Model response time might be slow, as you have limited GPU ressources', icon="⚠️")
+                
     return {"selected_emb_model": selected_emb_model,
+            "selected_router_model":selected_router_model,
             "chunk_size": str(chunk_size),
             "chunk_overlap": str(chunk_overlap),
             "re_ranker": re_ranker,
