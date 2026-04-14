@@ -25,7 +25,7 @@ A generic, raw and effective RAG pipeline that can be run and customised locally
      ```bash
      ollama pull qwen3.5  # serving as a chat model, feel free to change it to your preferred ones (i.e., I recommend models with smaller hallucination rate for better RAG performance)
      ollama pull nomic-embed-text  # serving as embedding model with 2K context
-     ollama pull smollm:360m  # serving as guardrails to adequately route the user queries 
+     ollama pull qwen3:1.7b  # serving as guardrails and to adequately route the user queries 
      ```
 
 2. **Clone Repository**
