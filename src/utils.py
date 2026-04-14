@@ -65,10 +65,19 @@ class LoadReRanker(Thread):
     class ReRanker():
         def __init__(self, model_name):
             
-            self.model = CrossEncoder(model_name, 
-                trust_remote_code=True)
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.model.to(device)
+            device = detect_device()
+            self.model = CrossEncoder(
+                model_name,
+                device = device["name"],
+                trust_remote_code = True
+                )
+            # conert to brain floating point to speed up inference
+            self.model.model.to(dtype=torch.bfloat16)
+            # Use torch.compile to speed up inference
+            if device["name"] in ["mps", "cuda"]:
+                self.model.model = torch.compile(self.model.model, mode="reduce-overhead")
+            else:
+                self.model.model = torch.compile(self.model.model, backend="inductor")
 
         def get_ranked_document(self, query_documents: List[Tuple[str, str]] = None, sources : List[Dict[str,str]] = None):
             logger.info("Re-ranking retrieved documents")
@@ -129,6 +138,24 @@ class LoadModelsThread(Thread):
             emb_models = False
         self.return_value = emb_models
 
+
+def detect_device():
+    """ Detect host device"""
+
+    name = None
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        name = "cuda"
+        logger.info(f"Detected NVIDIA GPU: {torch.cuda.get_device_name(0)}")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+        name = "mps"
+        logger.info("Detected Apple Silicon (Mac) GPU via MPS")
+    else:
+        device = torch.device("cpu")
+        name = "cpu"
+        logger.info("No GPU detected, using CPU")
+    return {"device": device, "name": name}
 
 def extract_model_names(models_info: Any) -> Dict[str,Tuple[str, ...]]:
     """
@@ -219,14 +246,13 @@ def render_config(emb_models_name : List[str], router_models_name: List[str]):
             )
         re_ranker = st.checkbox(
             "Use re-ranker",
-            help="Re-rank the retrieved documents for highly accurate responses"
+            help="Re-rank the retrieved documents for highly accurate RAG. We are using CrossEncoder re-ranker !"
             )
         if re_ranker:
             if not torch.cuda.is_available():
-                st.warning('Using ELO re-ranker! Model response time might be very slow, as this demo run on free tier CPU cloud \
-                        with limited ressources!', icon="⚠️")
+                st.warning('Using CrossEncoder-based re-ranker! Model response time might be very slow, as this demo run on CPU !', icon="⚠️")
             else:
-                st.warning('Using ELO re-ranker! Model response time might be slow, as you have limited GPU ressources', icon="⚠️")
+                st.warning('Using CrossEncoder-based re-ranker! Model response time might be slow !', icon="⚠️")
                 
     return {"selected_emb_model": selected_emb_model,
             "selected_router_model":selected_router_model,
