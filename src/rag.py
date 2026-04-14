@@ -1,5 +1,4 @@
-import logging, copy
-import streamlit as st
+import logging, copy, os
 from typing import Dict, List
 from src.prompt import PromptManager
 from langchain_ollama import ChatOllama
@@ -10,6 +9,7 @@ from langchain_classic.retrievers.document_compressors import LLMChainExtractor
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 from langchain_core.messages import SystemMessage, HumanMessage
+from src.query_router import QueryRouter
 import concurrent.futures
 from langchain_core.prompts import (
     ChatPromptTemplate, 
@@ -29,51 +29,55 @@ class RagLogic:
         
     """
     prompt_manager : PromptManager = PromptManager()
+    
 
-    def __init__(self, selected_model: str, router_model:str="lfm2.5-thinking:1.2b"):
+    def __init__(self, selected_model: str):
         
-        logger.info(f"Using {selected_model} for chat model")
-        logger.info(f"Using {router_model} for router model")
+       
+        # logger.info(f"Using {router_model} for router model")
         self.chat_model = ChatOllama(
             model=selected_model, 
             temperature=0.6, 
             top_p=0.95, 
             top_k=20
             )
-        
-        self.retriever_model = ChatOllama(
-            model=selected_model, 
-            temperature=0.6, 
-            top_p=0.95, 
-            top_k=20
-            )
-        
-        try :
-            self.router_model = ChatOllama(
-                model=router_model, 
-                temperature=0.1, 
-                top_k=12, 
-                )
-        except Exception as e:
-            logger.error(f"Unable to load the router model {router_model}: {e}")
-            logger.warning(f"Falling back to the chat model {selected_model}.")
-            self.router_model = ChatOllama(model=selected_model, temperature=0.1)
-            st.warning('Using the chat model as a router. Performance might degrade and responses might be slow !', icon="⚠️")
-
+        logger.info(f"Using {selected_model} for chat model")
+        self.query_router : QueryRouter = QueryRouter(model_name=selected_model)
+        logger.info(f"Using {selected_model} for router model")
         self.prune_chat_context = None
         self.sources = None
         self.response= None
 
+    def set_chat_model(self, chat_model_name : str = None) -> bool:
+        if chat_model_name:
+            logger.info(f"Set {chat_model_name} as the chat model")
+            self.chat_model = ChatOllama(
+            model=chat_model_name, 
+            temperature=0.6, 
+            top_p=0.95, 
+            top_k=20
+            )
+            return True
+        return False
+    
+    def set_router_model(self, router_model_name : str = None) -> bool:
+        if router_model_name:
+            logger.info(f"Set {router_model_name} as the router model")
+            self.query_router = QueryRouter(model_name = router_model_name)
+            return True
+        return False
 
     def format_chat_history(self, chat_history):
         """ 
         Turn List of chat history into a String and prune special characters
         return a chat history as a string
         """
-        formated_chat_history = "\n".join([f"{chat.type.capitalize()}: {chat.content}" 
-                          for chat in chat_history if chat.type.capitalize() != "system"])
-        # Removing curly brace to prevent potential Langchain prompttemplate processing error 
-        return formated_chat_history.replace("{", "").replace("}", "")
+        if chat_history:
+            formated_chat_history = "\n".join([f"{chat.type.capitalize()}: {chat.content}" 
+                            for chat in chat_history if chat.type.capitalize() != "system"])
+            # Removing curly brace to prevent potential Langchain prompttemplate processing error 
+            return formated_chat_history.replace("{", "").replace("}", "")
+        return None
 
 
     def retrieve_doc(self, pdf_id, pdf_data, config, QUERY_PROMPT, question):
@@ -91,7 +95,7 @@ class RagLogic:
         # Setup Multi querry retriever
         retriever = MultiQueryRetriever.from_llm(
             vector_db.as_retriever(search_kwargs={"k": 3}),
-            self.retriever_model,
+            self.chat_model,
             prompt=QUERY_PROMPT
         )
         try:
@@ -121,7 +125,7 @@ class RagLogic:
                     doc.metadata["pdf_name"] = pdf_data["name"]
                 if "pdf_id" not in doc.metadata:
                     doc.metadata["pdf_id"] = pdf_id
-                if config['re_ranker'] and config :
+                if config['re_ranker'] and config:
                     # Temporaly separately  store querry_doc_pairs and sources to match the re-ranker input format
                     curr_querry_docs_pairs.append((question, doc.page_content))
                     curr_sources.append(doc.metadata)
@@ -137,7 +141,7 @@ class RagLogic:
         self,
         question: str,
         pdfs_dict: Dict[str, Dict],
-        chat_context: List,
+        router_file_match: List,
         config : Dict = None
     ): 
         """
@@ -146,15 +150,15 @@ class RagLogic:
         """
         
         logger.info(f"Processing question across {len(pdfs_dict)} PDFs: {question}")
-        # Query prompt for querry expansion. Chat history is appended for query contextualization
-        template = RagLogic.prompt_manager.MULTI_QUERY_PROMPT_TEMPLATE + \
-              f"\n'Chat History': \n{self.format_chat_history(chat_context)}"
+        logger.info(f"Router match consists of : {len(router_file_match)} PDFs")
+        # Query prompt for query expansion. Chat history is appended for query contextualization
+        template = RagLogic.prompt_manager.MULTI_QUERY_PROMPT_TEMPLATE
         
         QUERY_PROMPT = PromptTemplate.from_template(template)
         
         # Retrieve from ALL PDF collections
         all_retrieved_docs = []
-        all_querry_docs_pairs =[]
+        all_querry_docs_pairs = []
         all_sources = []
 
         # Multithreading of the retrieval task to reduce latency
@@ -165,7 +169,7 @@ class RagLogic:
                 pdf_data, 
                 config, 
                 QUERY_PROMPT, 
-                question) : pdf_id for pdf_id, pdf_data in pdfs_dict.items()}
+                question) : pdf_id for pdf_id, pdf_data in pdfs_dict.items() if pdf_data['name'] in router_file_match}
             for future in concurrent.futures.as_completed(futures):
                 try:
                     results = future.result()
@@ -180,13 +184,13 @@ class RagLogic:
         # Initialize context (doc + source) formating variable
         context_parts = []
 
-        # Re-rankers the retrieved documents
+        # Powerfull Elo Re-rankers to re-rank the retrieved documents (work best on GPU, very slow on CPU)
         if config['re_ranker'] and config:
-            logger.info(f"Re-ranking the retreived documents")
+            logger.info(f"Re-ranking the {len(all_querry_docs_pairs)} retreived documents !")
             re_rank_documents = config['re_ranker'].get_ranked_document(all_querry_docs_pairs, all_sources)
             for score, doc, source in re_rank_documents:
-                # Keep only documents/chucks with similarity greater or equal to 0.35
-                if score >= 0.35:
+                # Keep only documents/chucks with similarity greater or equal to 0.65
+                if score >= 0.65:
                     context_parts.append(f"[Source: {source.get('pdf_name', 'Unknown')}]\n{doc}\n")
         else:
             # Keep Top 10 chunks
@@ -210,53 +214,22 @@ class RagLogic:
         self.prune_chat_context = copy.deepcopy(
             chat_context if len(chat_context) < 7 else chat_context[-6:]
             )
-        if len(chat_context) != len(self.prune_chat_context):
-            self.prune_chat_context.insert(0,
-                        SystemMessage(content="You are a helpful assistant.")
-                )
         formatted_context, all_retrieved_docs = None, None
+        # Routing the user query
+        router_response = self.query_router.route(question)
 
-        logger.info(f"Classifying the user query: {question}")
-        router_messages = [
-                    SystemMessage(content= RagLogic.prompt_manager.ROUTER_SYSTEM_PROMPT)
-                ]
-        
-        # By default classify users' queries as casual
-        router_response = "casual"
-        prune_router_context = chat_context if len(chat_context) < 5 else chat_context[-4:]
-        # Only route queries with more than 12 characters to prevent unecessary computation
-        if not (len(question) < 12):
-
-            router_messages.extend(prune_router_context)
-            router_messages.append(HumanMessagePromptTemplate.from_template(RagLogic.prompt_manager.ROUTER_PROMPT_TEMPLATE))
-            router_chain = (
-                {"question": lambda x: x["question"]}
-                | ChatPromptTemplate.from_messages(router_messages)
-                | self.router_model 
-                | StrOutputParser()
-            )
-            router_response = router_chain.invoke({"question": question})
-
-        # The logic of the router of queries
-        if "retrieval" in router_response:
+        if 'internal_docs' in router_response['route']:
+            match_files_path = [os.path.basename(path) for path in router_response['matches']]
+            logger.info(f"Router has matched '{question}' to these PDFs: {match_files_path}")
             logger.info(f"'{question}' is clasified as a retrival query.")
-            formatted_context, all_retrieved_docs = self.retrieve_all_doc(question, pdfs_dict, prune_router_context, config)
+            formatted_context, all_retrieved_docs = self.retrieve_all_doc(question, pdfs_dict, match_files_path, config)
             # RAG prompt with source awareness
             router_category_template = RagLogic.prompt_manager.ROUTER_RETRIEVAL_PROMPT_TEMPLATE
             logger.info("Generating response with source attribution")
-
-        elif "casual" in router_response:
-            logger.info(f"'{question}' is clasified as a casual query.")
-            router_category_template = RagLogic.prompt_manager.ROUTER_CASUAL_PROMPT_TEMPLATE
-
-        elif "toxic" in router_response:
-            logger.info(f"'{question}' is clasified as a toxic/malicious query.")
-            router_category_template = RagLogic.prompt_manager.ROUTER_TOXIC_PROMPT_TEMPLATE
-
         else:
-            logger.info(f"'{question}' is clasified as unsure query intent.")
-            router_category_template = RagLogic.prompt_manager.ROUTER_UNSURE_PROMPT_TEMPLATE
-            
+            router_category_template = RagLogic.prompt_manager.ROUTER_CASUAL_PROMPT_TEMPLATE
+            logger.info("Generating response")
+
         self.prune_chat_context.append(HumanMessagePromptTemplate.from_template(router_category_template))
         chat_context.append(HumanMessage(content=question))
         decision_chain = ChatPromptTemplate.from_messages(self.prune_chat_context) | self.chat_model
