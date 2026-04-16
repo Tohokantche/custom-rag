@@ -50,23 +50,27 @@ A generic and effective RAG pipeline that can be run locally and customised for 
 ```text
 
 customag-rag
-├── configs                                       # Configuration directory
-├── data
-│   ├── pdfs                                      # User's uploaded documents directory
-│   │   └── sample                                # Sample directory
-│   │       └── WEF_Global_Risks_Report_2026.pdf  # Default pdf sample
-│   └── vectors                                   # Vector database directory
-├── LICENSE                                       # Licence file
-├── logs                                          # App log directory
-├── main.py                                       # Entry point of the app that contains dynamic UI logic
-├── README.md                                     # App documentation and usage file
-├── requirements.txt                              # Dependencies file
-├── screenshot.png                                # Screenshot of app demo
-└── src                                           # Folder that contains app source files
-    ├── documents.py                              # Document ingestion logic
-    ├── embeddings.py                             # Vector database logic
-    ├── rag.py                                    # Actual RAG logic including retrieval, routing and grounding
-    └── utils.py                                  # Helper functions including UI sidebar logic
+├── data                                          
+│   └── pdfs                                       # User's uploaded documents directory
+│       └── sample                                 # Sample directory
+│           └── WEF_Global_Risks_Report_2026.pdf   # Default pdf sample
+├── LICENSE                                        # Licence file
+├── logs
+│   └── app.log                                    # App logs 
+├── main.py                                        # Entry point of the RAG app
+├── README.md                                      # App documentation and usage file
+├── requirements.txt                               # Dependencies file
+├── screenshot.png                                 # Screenshot of app demo
+└── src                                            # Folder that contains app source files
+    ├── __init__.py
+    ├── documents.py                               # Document ingestion logic
+    ├── embeddings.py                              # Vector database logic
+    ├── prompt.py                                  # All Prompts uses in the app
+    ├── query_router.py                            # Query router logic that also serves as guardrails
+    ├── rag.py                                     # Actual RAG logic including retrieval and grounding
+    ├── ui
+    │   └── chat.py                                # Streamlit based dynamic UI logic
+    └── utils.py                                   # Helper functions
 ```
 
 ## Contributing
