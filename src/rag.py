@@ -31,10 +31,8 @@ class RagLogic:
     prompt_manager : PromptManager = PromptManager()
     
 
-    def __init__(self, selected_model: str):
+    def __init__(self, selected_model: str="qwen3:1.7b"):
         
-       
-        # logger.info(f"Using {router_model} for router model")
         self.chat_model = ChatOllama(
             model=selected_model, 
             temperature=0.6, 
