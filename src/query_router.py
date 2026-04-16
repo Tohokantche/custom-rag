@@ -11,6 +11,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from keybert import KeyBERT
 import torch
+from functools import lru_cache
 from src.prompt import PromptManager
 from src.utils import detect_device
 
@@ -43,8 +44,9 @@ class QueryRouter:
             ) 
         self.sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
         self.sentence_model.to(detect_device()["device"])
+        self.sentence_model.compile(dynamic=True)
         self._init_tables()
-        logger.info("Successfully initialised class and models !")
+        logger.info("Successfully initialised the Query Router class and its models!")
 
     
     def tune_threshold(self):
@@ -120,14 +122,17 @@ class QueryRouter:
             conn.commit()
         return file_path
 
+    @lru_cache(maxsize=1000)
+    def _extract_keywords_cached(self, query):
+        """Skip the LLM step for identical queries via in-memory caching."""
+        return self._extract_keywords(query)
 
-    def route(self, query: str):
-        """Routes using BM25 ranking for sub-millisecond keyword lookup."""
+    def _extract_keywords(self, query):
+        """ Extract keywords form the user query"""
         DEFAULT_QUERY_PROMPT = PromptTemplate(
         input_variables=["question"],
         template=QueryRouter.prompt_manager.ROUTER_PROMPT_TEMPLATE,
         )
-
         query_chain = (
             {'question':  RunnablePassthrough()}
             | DEFAULT_QUERY_PROMPT
@@ -138,7 +143,12 @@ class QueryRouter:
         logger.info(f"Generated queries:\n {response}")
         kw_model = KeyBERT(model=self.sentence_model)
         keywords = kw_model.extract_keywords(response, stop_words=None)
-        q_terms = list({k for k,score in keywords})
+        return list({k for k,score in keywords})
+    
+    def route(self, query: str):
+        """Routes using BM25 ranking for sub-millisecond keyword lookup."""
+      
+        q_terms = self._extract_keywords_cached(query)
         search_query = " OR ".join(q_terms)
         matches = []
         best_score = 0.0
