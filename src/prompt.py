@@ -8,7 +8,8 @@ class PromptManager(BaseModel):
     ROUTER_PROMPT_TEMPLATE: str = """You are an AI language model assistant. Your task is to generate exactly 
     3 different versions of the given user question to retrieve relevant documents from an index database. 
     By generating multiple perspectives on the user question, your goal is to help the user overcome some 
-    of the limitations of keywords-based search. Provide these alternative questions separated by newlines. 
+    of the limitations of keywords-based search. Provide only these alternative questions separated by newlines. 
+    
     Original question: {question}"""
 
     ROUTER_RETRIEVAL_PROMPT_TEMPLATE :str = """Answer the question based ONLY on the following context from one or multiple 
